@@ -20,7 +20,7 @@ def canonical_json_bytes(value: object) -> bytes:
 
 
 def fixture_id(index: int, validity_class: str, payload_class: int) -> str:
-    return f"f{index:07d}-{validity_class}-{payload_class:03d}"
+    return f"p0-{validity_class}-{index:07d}-{payload_class:03d}"
 
 
 def _sensor_records(rng: SplitMix64, count: int, base: int = 0) -> tuple[SensorRecord, ...]:
@@ -59,37 +59,64 @@ def generate_case(index: int, validity_class: str, payload_class: int, rng: Spli
 
 
 def _counts(count: int) -> tuple[int, int, int]:
-    valid = count * 80 // 100
-    invalid = count * 5 // 100
-    return valid, invalid, count - valid - invalid
+    weights = (80, 15, 5)
+    quotas = [count * weight // 100 for weight in weights]
+    remainder = count - sum(quotas)
+    fractions = [count * weight % 100 for weight in weights]
+    for index in sorted(range(len(weights)), key=lambda item: (-fractions[item], item))[:remainder]:
+        quotas[index] += 1
+    valid, edge_count, invalid = quotas
+    return valid, invalid, edge_count
 
 
 def _write_dataset(temp: Path, seed: int, count: int) -> dict[str, object]:
     valid_count, invalid_count, edge_count = _counts(count)
     categories = (("valid", valid_count), ("edge_complex", edge_count), ("invalid", invalid_count))
     rng = SplitMix64(seed)
-    fixture_records = []
-    expected_lines = []
-    index = 0
-    for category, category_count in categories:
-        for _ in range(category_count):
-            payload_class = PAYLOAD_CLASSES[index % len(PAYLOAD_CLASSES)]
-            fixture, payload, expected = generate_case(index, category, payload_class, rng)
-            path = temp / "fixtures" / f"{fixture}.bin"
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(payload)
-            digest = hashlib.sha256(payload).hexdigest()
-            record = {"fixture_id": fixture, "payload_class": payload_class, "validity_class": category, "source_seed": f"0x{seed:016X}", "schema_version": "1.0", "sha256": digest, "expected": expected}
-            fixture_records.append({**record, "filename": f"fixtures/{fixture}.bin", "size": len(payload)})
-            expected_lines.append(json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
-            index += 1
+    manifest = {"schema_version": "1.0", "dataset_id": "prism.telemetry.p0.v1", "generator_version": "1.0", "oracle_version": "1.0", "seed": f"0x{seed:016X}", "prng": "SplitMix64", "encoding": "raw-binary-plus-canonical-jsonl", "payload_classes": list(PAYLOAD_CLASSES), "workload": {"total": count, "valid": valid_count, "invalid": invalid_count, "edge_complex": edge_count}, "fixture_order": "lexicographic fixture_id", "digest_algorithm": "SHA-256", "expected_results": "expected-results.jsonl"}
     expected_path = temp / "expected-results.jsonl"
-    expected_path.write_text(chr(10).join(expected_lines) + chr(10), encoding="utf-8", newline=chr(10))
-    manifest = {"schema_version": "1.0", "dataset_id": "prism.telemetry.p0.v1", "generator_version": "1.0", "oracle_version": "1.0", "seed": f"0x{seed:016X}", "prng": "SplitMix64", "encoding": "raw-binary-plus-canonical-jsonl", "payload_classes": list(PAYLOAD_CLASSES), "workload": {"total": count, "valid": valid_count, "invalid": invalid_count, "edge_complex": edge_count}, "fixture_order": "lexicographic fixture_id", "digest_algorithm": "SHA-256", "expected_results": "expected-results.jsonl", "fixtures": fixture_records}
-    manifest_bytes = canonical_json_bytes(manifest)
-    (temp / "manifest.json").write_bytes(manifest_bytes)
+    manifest_path = temp / "manifest.json"
+    fixtures_path = temp / "fixtures"
+    fixtures_path.mkdir(parents=True, exist_ok=True)
+    ordered_categories = tuple(sorted(categories))
+    with expected_path.open("wb") as expected_stream, manifest_path.open("wb") as manifest_stream:
+        manifest_stream.write(b"{")
+        for key in sorted(key for key in manifest if key < "fixtures"):
+            if manifest_stream.tell() > 1:
+                manifest_stream.write(b",")
+            manifest_stream.write(json.dumps(key, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+            manifest_stream.write(b":")
+            manifest_stream.write(json.dumps(manifest[key], ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+        manifest_stream.write(b',"fixtures":[')
+        first_fixture = True
+        index = 0
+        for category, category_count in ordered_categories:
+            for _ in range(category_count):
+                payload_class = PAYLOAD_CLASSES[index % len(PAYLOAD_CLASSES)]
+                fixture, payload, expected = generate_case(index, category, payload_class, rng)
+                path = fixtures_path / f"{fixture}.bin"
+                path.write_bytes(payload)
+                digest = hashlib.sha256(payload).hexdigest()
+                record = {"fixture_id": fixture, "payload_class": payload_class, "validity_class": category, "source_seed": f"0x{seed:016X}", "schema_version": "1.0", "sha256": digest, "expected": expected}
+                metadata = {**record, "filename": f"fixtures/{fixture}.bin", "size": len(payload)}
+                if not first_fixture:
+                    manifest_stream.write(b",")
+                first_fixture = False
+                manifest_stream.write(json.dumps(metadata, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+                expected_stream.write(canonical_json_bytes(record))
+                index += 1
+        manifest_stream.write(b"]")
+        for key in sorted(key for key in manifest if key > "fixtures"):
+            manifest_stream.write(b",")
+            manifest_stream.write(json.dumps(key, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+            manifest_stream.write(b":")
+            manifest_stream.write(json.dumps(manifest[key], ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+        manifest_stream.write(b"}")
+    manifest_bytes = manifest_path.read_bytes()
+    manifest_path.write_bytes(manifest_bytes + chr(10).encode("ascii"))
+    manifest_bytes += chr(10).encode("ascii")
     (temp / "manifest.sha256").write_text(hashlib.sha256(manifest_bytes).hexdigest() + chr(10), encoding="ascii")
-    return manifest
+    return {**manifest, "fixtures": []}
 
 
 def generate_dataset(output: Path, seed: int, count: int, replace: bool = False) -> dict[str, object]:

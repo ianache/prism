@@ -35,7 +35,7 @@ La generación se realiza en un directorio temporal y se publica mediante rename
 
 ## 4. Contrato de generación
 
-La semilla es 0x505249534D5F5631; el PRNG es SplitMix64 con wraparound uint64. El generador asigna N=1,000,000 casos: 800,000 valid, 50,000 invalid y 150,000 edge_complex. La asignación primero reserva válidos, luego edge/complex y finalmente inválidos. Dentro de cada categoría, las clases 105, 249 y 501 bytes se asignan por round-robin.
+La semilla es 0x505249534D5F5631; el PRNG es SplitMix64 con wraparound uint64. El generador asigna N=1,000,000 casos: 800,000 valid, 50,000 invalid y 150,000 edge_complex. Para cualquier otro N usa largest remainder sobre valid=80%, edge_complex=15% e invalid=5%; los empates se resuelven en ese orden. Dentro de cada categoría, las clases 105, 249 y 501 bytes se asignan por round-robin comenzando en 105. El identificador es `p0-{validity_class}-{index:07d}-{payload_class:03d}` y bytes, JSONL y manifest se escriben en streaming en ese orden.
 
 Los casos válidos se construyen con campos dentro de rango. Los inválidos se derivan de un caso válido aplicando una sola mutación nombrada: truncation, bad_magic, bad_version, length_mismatch, range_violation, unsupported_protocol o checksum_failure. Los edge/complex cubren igualdad de umbral, mínimos y máximos legales, sensor opcional ausente y área de sensores máxima.
 
@@ -76,7 +76,7 @@ La prueba de integración debe generar un dataset pequeño de 300 fixtures en un
 
 ## 9. Integridad y auditoría
 
-El manifest registra dataset_id, generator_version, oracle_version, seed, PRNG, schema versions, payload classes, counts, fixture ordering, digest algorithm y cada fixture con fixture_id, category, class, filename, size, sha256 y expected_result_line. Cualquier diferencia de digest, conteo, orden o versión invalida la ejecución.
+El manifest registra dataset_id, generator_version, oracle_version, seed, PRNG, schema versions, payload classes, counts, fixture ordering, digest algorithm y cada fixture con fixture_id, category, class, filename, size, sha256 y expected_result_line. La generación no retiene la lista completa de fixtures en memoria. Cualquier diferencia de digest, conteo, orden o versión invalida la ejecución.
 
 Los fixtures canónicos no se regeneran durante una corrida de benchmark. La generación y la verificación son pasos previos; el benchmark solo lee entradas inmutables.
 

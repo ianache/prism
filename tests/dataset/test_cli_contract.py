@@ -51,6 +51,20 @@ class CliContractTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
 
+    def test_oracle_refuses_existing_output(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            input_dir = Path(root) / "fixtures"
+            input_dir.mkdir()
+            (input_dir / "sample.bin").write_bytes(b"")
+            output = Path(root) / "expected-results.jsonl"
+            output.write_text("sentinel\n", encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, "-m", "tools.dataset.oracle", "--input", str(input_dir), "--output", str(output)],
+                check=False, capture_output=True, text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(output.read_text(encoding="utf-8"), "sentinel\n")
+
 
 if __name__ == "__main__":
     unittest.main()

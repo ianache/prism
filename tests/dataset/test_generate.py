@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.dataset.generate import SEED, generate_dataset
+from tools.dataset.generate import SEED, fixture_id, generate_dataset
 
 
 class GenerateTests(unittest.TestCase):
@@ -18,6 +18,14 @@ class GenerateTests(unittest.TestCase):
             second_files = sorted((second_path / "fixtures").glob("*.bin"))
             self.assertEqual([path.name for path in first_files], [path.name for path in second_files])
             self.assertEqual([path.read_bytes() for path in first_files], [path.read_bytes() for path in second_files])
+
+    def test_quota_rounding_and_fixture_ids_are_stable(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            manifest = generate_dataset(Path(root) / "dataset", SEED, 3)
+            self.assertEqual(manifest["workload"], {"total": 3, "valid": 2, "invalid": 0, "edge_complex": 1})
+            self.assertEqual(fixture_id(7, "edge_complex", 249), "p0-edge_complex-0000007-249")
+            fixture_ids = [item["fixture_id"] for item in manifest["fixtures"]]
+            self.assertEqual(fixture_ids, sorted(fixture_ids))
 
     def test_nonempty_output_requires_replace(self) -> None:
         with tempfile.TemporaryDirectory() as root:

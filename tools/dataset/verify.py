@@ -38,7 +38,11 @@ def _validate_expected(expected: dict[str, object]) -> None:
 
 def verify_fixture(path: Path, expected: dict[str, object]) -> None:
     payload = path.read_bytes()
-    if len(payload) != expected["payload_class"]:
+    expected_size = expected["payload_class"]
+    if expected["validity_class"] == "invalid":
+        if len(payload) > expected_size:
+            raise ValueError(f"wrong payload size: {path.name}")
+    elif len(payload) != expected_size:
         raise ValueError(f"wrong payload size: {path.name}")
     if hashlib.sha256(payload).hexdigest() != expected["sha256"]:
         raise ValueError(f"wrong digest: {path.name}")
