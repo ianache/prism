@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/prism-runtime"]
+resolver = "2"
