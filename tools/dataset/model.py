@@ -21,6 +21,7 @@ class TelemetryFrame:
     sensors: tuple[SensorRecord, ...]
     flags: int = 0
     protocol: int = 1
+    payload_class: int = 105
 
 
 @dataclass(frozen=True)
