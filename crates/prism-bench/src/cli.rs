@@ -5,6 +5,8 @@ pub enum CliError {
     MissingMetadata,
     MissingValue,
     UnknownFlag,
+    InvalidScenario,
+    InvalidLevel,
 }
 
 impl fmt::Display for CliError {
@@ -13,6 +15,8 @@ impl fmt::Display for CliError {
             Self::MissingMetadata => "missing required metadata",
             Self::MissingValue => "missing flag value",
             Self::UnknownFlag => "unknown flag",
+            Self::InvalidScenario => "invalid scenario",
+            Self::InvalidLevel => "invalid level",
         })
     }
 }
@@ -27,7 +31,15 @@ pub struct Config {
     pub samples: usize,
     pub repetitions: usize,
     pub output: String,
+    pub warmup_frames: usize,
+    pub convergence_window: usize,
+    pub convergence_threshold_percent: u32,
+    pub max_warmup_frames: usize,
+    pub measured_frames: usize,
+    pub concurrency: usize,
 }
+
+pub type CliConfig = Config;
 
 pub fn parse_args<I, S>(args: I) -> Result<Config, CliError>
 where
@@ -46,6 +58,7 @@ where
     let mut samples = 100usize;
     let mut repetitions = 1usize;
     let mut output = "results/raw/s1.jsonl".to_owned();
+    let mut concurrency = 1usize;
     let mut index = 1;
     while index < values.len() {
         let flag = values[index].as_str();
@@ -57,9 +70,8 @@ where
             "--os" => Some(3),
             "--governor" => Some(4),
             "--affinity" => Some(5),
-            "--levels" | "--scenario" | "--warmup" | "--samples" | "--repetitions" | "--output" => {
-                None
-            }
+            "--levels" | "--scenario" | "--warmup" | "--samples" | "--repetitions" | "--output"
+            | "--concurrency" => None,
             _ => return Err(CliError::UnknownFlag),
         };
         if index + 1 >= values.len() {
@@ -74,12 +86,25 @@ where
             "--samples" => samples = value.parse().map_err(|_| CliError::MissingValue)?,
             "--repetitions" => repetitions = value.parse().map_err(|_| CliError::MissingValue)?,
             "--output" => output = value,
+            "--concurrency" => concurrency = value.parse().map_err(|_| CliError::MissingValue)?,
             _ => metadata[target.unwrap()] = Some(value),
         }
         index += 2;
     }
     if dataset.is_none() || metadata.iter().any(Option::is_none) {
         return Err(CliError::MissingMetadata);
+    }
+    if scenario != "S1" {
+        return Err(CliError::InvalidScenario);
+    }
+    if levels.split(',').any(|level| !matches!(level, "b0" | "b1")) {
+        return Err(CliError::InvalidLevel);
+    }
+    if warmup == 0 || samples == 0 || repetitions == 0 || concurrency != 1 {
+        return Err(CliError::MissingValue);
+    }
+    if warmup < 10_000 || samples < 10_000 || repetitions != 5 {
+        return Err(CliError::MissingValue);
     }
     Ok(Config {
         dataset: dataset.unwrap(),
@@ -90,5 +115,11 @@ where
         samples,
         repetitions,
         output,
+        warmup_frames: warmup,
+        convergence_window: 1_000,
+        convergence_threshold_percent: 5,
+        max_warmup_frames: 1_000_000,
+        measured_frames: samples,
+        concurrency,
     })
 }
