@@ -1,6 +1,8 @@
 import subprocess
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 from tools.dataset.oracle import oracle_bytes
 from tools.dataset.model import SensorRecord, TelemetryFrame
@@ -26,6 +28,28 @@ class CliContractTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("usage:", result.stdout.lower())
+
+    def test_invalid_seed_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            result = subprocess.run(
+                [sys.executable, "-m", "tools.dataset.generate", "--output", str(Path(root) / "dataset"), "--seed", "bad", "--count", "1"],
+                check=False, capture_output=True, text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+
+    def test_nonempty_output_requires_replace(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            output = Path(root) / "dataset"
+            command = [sys.executable, "-m", "tools.dataset.generate", "--output", str(output), "--seed", "0x505249534D5F5631", "--count", "3"]
+            self.assertEqual(subprocess.run(command, check=False).returncode, 0)
+            self.assertNotEqual(subprocess.run(command, check=False, capture_output=True).returncode, 0)
+
+    def test_verify_missing_input_is_rejected(self) -> None:
+        result = subprocess.run(
+            [sys.executable, "-m", "tools.dataset.verify", "--dataset", "does-not-exist"],
+            check=False, capture_output=True, text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
 
 
 if __name__ == "__main__":
