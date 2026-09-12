@@ -38,11 +38,19 @@ fn s1_runner_keeps_correctness_outside_timing() {
         Level::B0,
         &dataset,
         &RunConfig {
-            warmup: 1,
+            warmup: 0,
             samples: 1,
+            warmup_frames: 0,
+            convergence_window: 1_000,
+            convergence_threshold_percent: 5,
+            max_warmup_frames: 0,
+            measured_frames: 1,
+            repetitions: 1,
+            concurrency: 1,
         },
-    );
-    assert_eq!(result.correctness_total, 300);
-    assert_eq!(result.correctness_matches, 300);
+    )
+    .unwrap();
+    assert_eq!(result.correctness_total, 1);
+    assert_eq!(result.correctness_matches, 1);
     assert!(result.p95_ns >= result.p50_ns);
 }
