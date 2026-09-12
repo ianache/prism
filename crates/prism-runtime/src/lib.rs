@@ -1,4 +1,5 @@
 pub mod crc32c;
+pub mod frame;
 pub mod model;
 
 pub use crc32c::crc32c;
