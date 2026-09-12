@@ -28,3 +28,21 @@ Usa `graphify` cuando el trabajo requiera comprender un conjunto de archivos, de
 - No expongas archivos sensibles omitidos por la herramienta; informa solo el conteo cuando corresponda.
 
 La referencia detallada de la skill se encuentra en `graphify/SKILL.md` dentro de la instalación local de agentes.
+
+## Registro de consumo de Superpowers
+
+Para cada plan y cada tarea ejecutados mediante Superpowers, mantén un registro en `docs/consumo.md`.
+
+### Reglas de registro
+
+- Registra una fila al finalizar cada plan y otra al finalizar cada tarea; no agrupes varias tareas en una sola fila.
+- Incluye como mínimo: fecha, plan, identificador y nombre de la tarea, estado, hora de inicio, hora de fin, tiempo transcurrido, tokens de entrada, tokens de salida, tokens totales, fuente de la medición y observaciones.
+- Usa el tiempo transcurrido real siempre que esté disponible. Si no puede medirse con precisión, marca el valor como `N/D` y explica el motivo en observaciones.
+- Registra los tokens reales cuando la herramienta o el proveedor los informe. No inventes valores; usa `N/D` cuando no estén disponibles y conserva la fuente de medición.
+- Mantén el archivo como un historial acumulativo: añade entradas nuevas al final y no sobrescribas registros anteriores.
+- Si una tarea falla, se cancela o queda bloqueada, registra igualmente su consumo y estado.
+- Actualiza el registro antes de dar por completado el plan o la tarea.
+
+### Formato
+
+Usa la tabla definida en `docs/consumo.md`. Los tiempos deben estar en segundos y los tokens como números enteros cuando sean conocidos.
