@@ -104,7 +104,7 @@
 - Create: tests/dataset/test_generate.py
 
 **Interfaces:**
-- `fixture_id(index, validity_class, payload_class)` returns `p0-{validity_class}-{payload_class:03d}-{index:07d}`; output is sorted by this identifier before writing.
+- `fixture_id(index, validity_class, payload_class)` returns `p0-{validity_class}-{index:07d}-{payload_class:03d}`; output is sorted by this identifier before writing and may be streamed without retaining the full fixture list.
 - generate_case(index, validity_class, payload_class, rng) returns fixture id, bytes, and expected result.
 - write_manifest(path, manifest) writes sorted-key canonical JSON plus LF.
 - generate_dataset(output, seed, count, replace=False) writes fixtures, expected-results.jsonl, manifest, and manifest.sha256 through a temporary sibling directory.
@@ -113,7 +113,7 @@
 - [ ] Step 2: Write repeatability tests comparing every file from two generations with the same seed.
 - [ ] Step 3: Write mutation coverage tests for every required invalid and edge case.
 - [ ] Step 4: Run python -m unittest tests.dataset.test_generate -v and confirm failure.
-- [ ] Step 5: Implement deterministic assignment, valid field generation, one-mutation invalid cases, edge cases, digests, and atomic promotion. For any count, allocate category quotas with largest remainder using valid=80%, edge_complex=15%, invalid=5%; ties resolve in the order valid, edge_complex, invalid. Payload classes rotate 105, 249, 501 within each category.
+- [ ] Step 5: Implement deterministic assignment, valid field generation, one-mutation invalid cases, edge cases, digests, streaming manifest/JSONL output, and atomic promotion. For any count, allocate category quotas with largest remainder using valid=80%, edge_complex=15%, invalid=5%; ties resolve in the order valid, edge_complex, invalid. Payload classes rotate 105, 249, 501 within each category.
 - [ ] Step 6: Run focused tests and confirm pass.
 - [ ] Step 7: Extend datasets/manifest.json with generator version, oracle version, fixture list, and exact counts while preserving schema_version 1.0.
 - [ ] Step 8: Commit with git add tools/dataset/generate.py datasets/manifest.json datasets/README.md datasets/generator-spec.md tests/dataset/test_generate.py and git commit -m "feat: generate deterministic telemetry fixtures".
