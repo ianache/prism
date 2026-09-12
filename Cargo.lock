@@ -3,5 +3,12 @@
 version = 4
 
 [[package]]
+name = "prism-bench"
+version = "0.1.0"
+dependencies = [
+ "prism-runtime",
+]
+
+[[package]]
 name = "prism-runtime"
 version = "0.1.0"

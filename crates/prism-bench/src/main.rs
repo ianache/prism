@@ -32,7 +32,7 @@ fn main() {
             prism_bench::runner::Level::B0 => "b0",
             prism_bench::runner::Level::B1 => "b1",
         };
-        lines.push(format!("{{\"implementation\":\"rust\",\"level\":\"{}\",\"scenario\":\"{}\",\"samples\":{},\"p50_ns\":{},\"p95_ns\":{},\"p99_ns\":{},\"correctness_total\":{},\"correctness_matches\":{},\"cpu_model\":\"{}\",\"cores\":\"{}\",\"ram_bytes\":\"{}\",\"os\":\"{}\",\"governor\":\"{}\",\"affinity\":\"{}\"}}\n", name, config.scenario, run.samples, run.p50_ns, run.p95_ns, run.p99_ns, run.correctness_total, run.correctness_matches, config.metadata[0], config.metadata[1], config.metadata[2], config.metadata[3], config.metadata[4], config.metadata[5]));
+        lines.push(format!("{{\"implementation\":\"rust\",\"level\":\"{}\",\"scenario\":\"{}\",\"samples\":{},\"p50_ns\":{},\"p95_ns\":{},\"p99_ns\":{},\"correctness_total\":{},\"correctness_matches\":{},\"dataset_digest\":\"{}\",\"cpu_model\":\"{}\",\"cores\":\"{}\",\"ram_bytes\":\"{}\",\"os\":\"{}\",\"governor\":\"{}\",\"affinity\":\"{}\"}}\n", name, config.scenario, run.samples, run.p50_ns, run.p95_ns, run.p99_ns, run.correctness_total, run.correctness_matches, dataset.manifest_digest, config.metadata[0], config.metadata[1], config.metadata[2], config.metadata[3], config.metadata[4], config.metadata[5]));
     }
     if let Err(error) =
         prism_bench::output::write_once(std::path::Path::new(&config.output), &lines.concat())

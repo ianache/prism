@@ -18,6 +18,7 @@ impl From<io::Error> for DatasetError {
 pub struct Dataset {
     pub fixtures: Vec<Vec<u8>>,
     pub expected: Vec<String>,
+    pub manifest_digest: String,
 }
 
 fn expected_json(line: &str) -> String {
@@ -71,12 +72,19 @@ impl Dataset {
             .lines()
             .map(expected_json)
             .collect::<Vec<_>>();
+        let manifest_digest = fs::read_to_string(path.join("manifest.sha256"))?
+            .trim()
+            .to_owned();
         if fixtures.len() != expected.len() {
             return Err(DatasetError::CountMismatch {
                 fixtures: fixtures.len(),
                 expected: expected.len(),
             });
         }
-        Ok(Self { fixtures, expected })
+        Ok(Self {
+            fixtures,
+            expected,
+            manifest_digest,
+        })
     }
 }
