@@ -1,4 +1,5 @@
 pub mod b0;
+pub mod b1;
 pub mod crc32c;
 pub mod frame;
 pub mod model;
