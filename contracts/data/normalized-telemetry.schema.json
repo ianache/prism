@@ -1,0 +1,13 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://prism.local/contracts/data/normalized-telemetry.schema.json",
+  "title":"NormalizedTelemetry","type":"object","additionalProperties":false,
+  "required":["kind","schema_version","device_id","timestamp_unix_s","latitude_e7","longitude_e7","speed_cm_per_s","heading_cdeg","ignition","battery_mv","sensors","classification","severity","route"],
+  "properties":{
+    "kind":{"const":"normalized_telemetry"},"schema_version":{"const":"1.0"},
+    "device_id":{"type":"integer","minimum":1,"maximum":999999999999999},"timestamp_unix_s":{"type":"integer","minimum":0,"maximum":4102444800},
+    "latitude_e7":{"type":"integer","minimum":-900000000,"maximum":900000000},"longitude_e7":{"type":"integer","minimum":-1800000000,"maximum":1800000000},
+    "speed_cm_per_s":{"type":"integer","minimum":0,"maximum":50000},"heading_cdeg":{"type":"integer","minimum":0,"maximum":35999},"ignition":{"type":"integer","enum":[0,1]},"battery_mv":{"type":"integer","minimum":0,"maximum":60000},
+    "sensors":{"type":"array","maxItems":76},"classification":{"type":"string","enum":["NORMAL","PARKED","LOW_BATTERY","MOVING","OVERHEAT"]},"severity":{"enum":["INFO","WARN","CRITICAL"]},"route":{"enum":["STANDARD","ALERT","QUARANTINE"]}
+  }
+}

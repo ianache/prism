@@ -1,0 +1,13 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://prism.local/contracts/data/binary-frame.schema.json",
+  "title":"BinaryFrame",
+  "type":"object","additionalProperties":false,
+  "required":["kind","schema_version","bytes_b64","payload_length","payload_class"],
+  "properties":{
+    "kind":{"const":"binary_frame"},"schema_version":{"const":"1.0"},
+    "bytes_b64":{"type":"string","contentEncoding":"base64"},
+    "payload_length":{"type":"integer","minimum":45,"maximum":65535},
+    "payload_class":{"enum":[105,249,501]}
+  }
+}

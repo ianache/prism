@@ -1,0 +1,12 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://prism.local/contracts/data/rejection.schema.json",
+  "title":"Rejection","type":"object","additionalProperties":false,
+  "required":["kind","schema_version","code","stage","context"],
+  "properties":{
+    "kind":{"const":"rejection"},"schema_version":{"const":"1.0"},
+    "code":{"enum":["TRUNCATED","BAD_MAGIC","UNSUPPORTED_VERSION","LENGTH_MISMATCH","RANGE_VIOLATION","UNSUPPORTED_PROTOCOL","CHECKSUM_FAILURE"]},
+    "stage":{"const":"F1_VALIDATE"},
+    "context":{"type":"object","additionalProperties":{"type":["integer","string"]}}
+  }
+}
