@@ -41,20 +41,40 @@ fn read_i32(payload: &[u8], offset: usize) -> i32 {
 }
 
 pub fn validate_ranges(frame: &TelemetryFrame) -> Result<(), Rejection> {
-    let valid = frame.device_id >= 1
-        && frame.device_id <= 999_999_999_999_999
-        && frame.timestamp_unix_s <= 4_102_444_800
-        && (-900_000_000..=900_000_000).contains(&frame.latitude_e7)
-        && (-1_800_000_000..=1_800_000_000).contains(&frame.longitude_e7)
-        && frame.speed_cm_per_s <= 50_000
-        && frame.heading_cdeg <= 35_999
-        && frame.ignition <= 1
-        && frame.battery_mv <= 60_000
-        && frame.protocol == 1;
-    if !valid {
+    let checks: [(&str, i64, i64, i64); 10] = [
+        ("device_id", frame.device_id as i64, 1, 999_999_999_999_999),
+        (
+            "timestamp_unix_s",
+            frame.timestamp_unix_s as i64,
+            0,
+            4_102_444_800,
+        ),
+        (
+            "latitude_e7",
+            frame.latitude_e7 as i64,
+            -900_000_000,
+            900_000_000,
+        ),
+        (
+            "longitude_e7",
+            frame.longitude_e7 as i64,
+            -1_800_000_000,
+            1_800_000_000,
+        ),
+        ("speed_cm_per_s", frame.speed_cm_per_s as i64, 0, 50_000),
+        ("heading_cdeg", frame.heading_cdeg as i64, 0, 35_999),
+        ("ignition", frame.ignition as i64, 0, 1),
+        ("battery_mv", frame.battery_mv as i64, 0, 60_000),
+        ("flags", frame.flags as i64, 0, 255),
+        ("protocol", frame.protocol as i64, 1, 1),
+    ];
+    if let Some((name, value, _minimum, _maximum)) = checks
+        .into_iter()
+        .find(|(_, value, minimum, maximum)| *value < *minimum || *value > *maximum)
+    {
         return Err(reject(
             RejectionCode::RangeViolation,
-            RejectionContext::None,
+            RejectionContext::Field { name, value },
         ));
     }
     Ok(())
@@ -64,21 +84,23 @@ pub fn decode_frame(payload: &[u8]) -> Result<TelemetryFrame, Rejection> {
     if payload.len() < 105 {
         return Err(reject(
             RejectionCode::Truncated,
-            RejectionContext::Offset {
-                offset: payload.len() as u16,
+            RejectionContext::ActualLength {
+                actual: payload.len() as u16,
             },
         ));
     }
     if payload[0..2] != MAGIC {
         return Err(reject(
             RejectionCode::BadMagic,
-            RejectionContext::Offset { offset: 0 },
+            RejectionContext::Magic {
+                actual: [payload[0], payload[1]],
+            },
         ));
     }
     if payload[2] != VERSION {
         return Err(reject(
             RejectionCode::UnsupportedVersion,
-            RejectionContext::Offset { offset: 2 },
+            RejectionContext::Version { actual: payload[2] },
         ));
     }
 
@@ -95,7 +117,9 @@ pub fn decode_frame(payload: &[u8]) -> Result<TelemetryFrame, Rejection> {
     if payload[6] != 1 {
         return Err(reject(
             RejectionCode::UnsupportedProtocol,
-            RejectionContext::Offset { offset: 6 },
+            RejectionContext::Protocol {
+                protocol: payload[6],
+            },
         ));
     }
 
@@ -105,7 +129,10 @@ pub fn decode_frame(payload: &[u8]) -> Result<TelemetryFrame, Rejection> {
     if area_len != expected_area_len || area_len % 6 != 0 || sensor_count > area_len / 6 {
         return Err(reject(
             RejectionCode::RangeViolation,
-            RejectionContext::Offset { offset: 39 },
+            RejectionContext::Area {
+                sensor_area_len: area_len as u16,
+                sensor_count: sensor_count as u8,
+            },
         ));
     }
 
@@ -120,8 +147,9 @@ pub fn decode_frame(payload: &[u8]) -> Result<TelemetryFrame, Rejection> {
         {
             return Err(reject(
                 RejectionCode::RangeViolation,
-                RejectionContext::Offset {
-                    offset: offset as u16,
+                RejectionContext::Sensor {
+                    sensor_id,
+                    sensor_kind,
                 },
             ));
         }
@@ -141,9 +169,7 @@ pub fn decode_frame(payload: &[u8]) -> Result<TelemetryFrame, Rejection> {
     {
         return Err(reject(
             RejectionCode::RangeViolation,
-            RejectionContext::Offset {
-                offset: padding_start as u16,
-            },
+            RejectionContext::Padding,
         ));
     }
 

@@ -59,7 +59,8 @@ fn serialize_normalized(value: &NormalizedTelemetry) -> String {
         .collect::<Vec<_>>()
         .join(",");
     format!(
-        "{{\"classification\":\"{}\",\"device_id\":{},\"heading_cdeg\":{},\"ignition\":{},\"kind\":\"normalized_telemetry\",\"latitude_e7\":{},\"longitude_e7\":{},\"route\":\"{}\",\"schema_version\":\"1.0\",\"sensors\":[{}],\"severity\":\"{}\",\"speed_cm_per_s\":{},\"timestamp_unix_s\":{}}}",
+        "{{\"battery_mv\":{},\"classification\":\"{}\",\"device_id\":{},\"heading_cdeg\":{},\"ignition\":{},\"kind\":\"normalized_telemetry\",\"latitude_e7\":{},\"longitude_e7\":{},\"route\":\"{}\",\"schema_version\":\"1.0\",\"sensors\":[{}],\"severity\":\"{}\",\"speed_cm_per_s\":{},\"timestamp_unix_s\":{}}}",
+        frame.battery_mv,
         classification_name(value.classification),
         frame.device_id,
         frame.heading_cdeg,
@@ -75,8 +76,26 @@ fn serialize_normalized(value: &NormalizedTelemetry) -> String {
 }
 
 fn serialize_rejection(value: &Rejection) -> String {
+    let code = match value.code {
+        crate::RejectionCode::Truncated => "TRUNCATED",
+        crate::RejectionCode::BadMagic => "BAD_MAGIC",
+        crate::RejectionCode::UnsupportedVersion => "UNSUPPORTED_VERSION",
+        crate::RejectionCode::LengthMismatch => "LENGTH_MISMATCH",
+        crate::RejectionCode::RangeViolation => "RANGE_VIOLATION",
+        crate::RejectionCode::UnsupportedProtocol => "UNSUPPORTED_PROTOCOL",
+        crate::RejectionCode::ChecksumFailure => "CHECKSUM_FAILURE",
+    };
     let context = match value.context {
         crate::RejectionContext::None => "{}".to_string(),
+        crate::RejectionContext::ActualLength { actual } => {
+            format!("{{\"actual_length\":{}}}", actual)
+        }
+        crate::RejectionContext::Magic { actual } => format!(
+            "{{\"actual_magic\":\"{:02x}{:02x}\"}}",
+            actual[0], actual[1]
+        ),
+        crate::RejectionContext::Version { actual } => format!("{{\"actual_version\":{}}}", actual),
+        crate::RejectionContext::Protocol { protocol } => format!("{{\"protocol\":{}}}", protocol),
         crate::RejectionContext::Length { declared, actual } => {
             format!(
                 "{{\"actual_length\":{},\"declared_length\":{}}}",
@@ -90,10 +109,26 @@ fn serialize_rejection(value: &Rejection) -> String {
             )
         }
         crate::RejectionContext::Offset { offset } => format!("{{\"offset\":{}}}", offset),
+        crate::RejectionContext::Field { name, value } => format!("{{\"{}\":{}}}", name, value),
+        crate::RejectionContext::Area {
+            sensor_area_len,
+            sensor_count,
+        } => format!(
+            "{{\"sensor_area_len\":{},\"sensor_count\":{}}}",
+            sensor_area_len, sensor_count
+        ),
+        crate::RejectionContext::Sensor {
+            sensor_id,
+            sensor_kind,
+        } => format!(
+            "{{\"sensor_id\":{},\"sensor_kind\":{}}}",
+            sensor_id, sensor_kind
+        ),
+        crate::RejectionContext::Padding => "{\"padding\":\"nonzero\"}".to_string(),
     };
     format!(
-        "{{\"code\":\"{:?}\",\"context\":{},\"kind\":\"rejection\",\"schema_version\":\"1.0\",\"stage\":\"F1_VALIDATE\"}}",
-        value.code, context
+        "{{\"code\":\"{}\",\"context\":{},\"kind\":\"rejection\",\"schema_version\":\"1.0\",\"stage\":\"F1_VALIDATE\"}}",
+        code, context
     )
 }
 

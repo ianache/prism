@@ -77,7 +77,7 @@ fn b0_returns_normalized_and_typed_rejections() {
 #[test]
 fn normalized_outcome_has_canonical_json_shape() {
     let output = b0::serialize_outcome_json(&b0::process(&payload(1, 12_000, 0, None)));
-    assert!(output.starts_with("{\"classification\":\"NORMAL\""));
+    assert!(output.starts_with("{\"battery_mv\":12000,\"classification\":\"NORMAL\""));
     assert!(output.contains("\"kind\":\"normalized_telemetry\""));
     assert!(!output.contains('\n'));
 }

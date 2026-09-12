@@ -108,9 +108,42 @@ pub enum RejectionStage {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RejectionContext {
     None,
-    Length { declared: u16, actual: u16 },
-    Checksum { expected: u32, actual: u32 },
-    Offset { offset: u16 },
+    ActualLength {
+        actual: u16,
+    },
+    Magic {
+        actual: [u8; 2],
+    },
+    Version {
+        actual: u8,
+    },
+    Protocol {
+        protocol: u8,
+    },
+    Length {
+        declared: u16,
+        actual: u16,
+    },
+    Checksum {
+        expected: u32,
+        actual: u32,
+    },
+    Offset {
+        offset: u16,
+    },
+    Field {
+        name: &'static str,
+        value: i64,
+    },
+    Area {
+        sensor_area_len: u16,
+        sensor_count: u8,
+    },
+    Sensor {
+        sensor_id: u8,
+        sensor_kind: u8,
+    },
+    Padding,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
