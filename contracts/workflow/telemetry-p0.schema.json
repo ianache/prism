@@ -1,0 +1,12 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://prism.local/contracts/workflow/telemetry-p0.schema.json",
+  "title":"TelemetryP0Workflow","type":"object","additionalProperties":false,
+  "required":["schema_version","workflow_id","version","execution_profile","inputs","outputs","nodes","edges"],
+  "properties":{
+    "schema_version":{"const":"1.0"},"workflow_id":{"const":"prism.telemetry.p0"},"version":{"const":"1.0"},"execution_profile":{"const":"P0"},
+    "inputs":{"const":[{"name":"frame","schema":"binary-frame"}]},"outputs":{"const":[{"name":"result","schema":"normalized-or-rejection"}]},
+    "nodes":{"const":[{"id":"F1","filter":"f1-validate"},{"id":"F2","filter":"f2-decode"},{"id":"F3","filter":"f3-normalize"},{"id":"F4","filter":"f4-evaluate-rules"},{"id":"F5","filter":"f5-classify"},{"id":"F6","filter":"f6-route"}]},
+    "edges":{"const":[{"from":"F1","to":"F2"},{"from":"F2","to":"F3"},{"from":"F3","to":"F4"},{"from":"F4","to":"F5"},{"from":"F5","to":"F6"}]}
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "rule_set_id": "prism.telemetry.p0",
+  "version": "1.0",
+  "comparison_semantics": "integer_inclusive_first_match",
+  "missing_sensor_behavior": "sensor-dependent rules do not match",
+  "conflict_behavior": "first rule in order wins",
+  "rules": [
+    {"id":"R001","precedence":1,"field":"ignition","operator":"eq","operand":0,"unit":"boolean","label":"PARKED","severity":"INFO","route":"STANDARD"},
+    {"id":"R002","precedence":2,"field":"battery_mv","operator":"lt","operand":11000,"unit":"mV","label":"LOW_BATTERY","severity":"WARN","route":"ALERT"},
+    {"id":"R003","precedence":3,"field":"speed_cm_per_s","operator":"gte","operand":2778,"unit":"cm/s","label":"MOVING","severity":"INFO","route":"STANDARD"},
+    {"id":"R004","precedence":4,"field":"sensor:1","operator":"gte","operand":85000,"unit":"milli-Celsius","label":"OVERHEAT","severity":"CRITICAL","route":"QUARANTINE"}
+  ],
+  "default": {"label":"NORMAL","severity":"INFO","route":"STANDARD"}
+}

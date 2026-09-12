@@ -1,0 +1,11 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://prism.local/contracts/qos/p0.schema.json",
+  "title":"P0QoS","type":"object","additionalProperties":false,
+  "required":["schema_version","profile","latency_us","workflow_tax_p99_percent","in_process","network_allowed","bounded_memory","allocation_policy"],
+  "properties":{
+    "schema_version":{"const":"1.0"},"profile":{"const":"P0"},
+    "latency_us":{"type":"object","additionalProperties":false,"required":["p50","p95","p99"],"properties":{"p50":{"const":250},"p95":{"const":500},"p99":{"const":1000}}},
+    "workflow_tax_p99_percent":{"const":20},"in_process":{"const":true},"network_allowed":{"const":false},"bounded_memory":{"const":true},"allocation_policy":{"enum":["minimal","zero_hot_path"]}
+  }
+}
