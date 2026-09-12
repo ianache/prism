@@ -35,7 +35,9 @@ La generación se realiza en un directorio temporal y se publica mediante rename
 
 ## 4. Contrato de generación
 
-La semilla es 0x505249534D5F5631; el PRNG es SplitMix64 con wraparound uint64. El generador asigna N=1,000,000 casos: 800,000 valid, 50,000 invalid y 150,000 edge_complex. La asignación primero reserva válidos, luego edge/complex y finalmente inválidos. Dentro de cada categoría, las clases 105, 249 y 501 bytes se asignan por round-robin.
+La semilla es 0x505249534D5F5631; el PRNG es SplitMix64 con wraparound uint64. El generador asigna N=1,000,000 casos: 800,000 valid, 50,000 invalid y 150,000 edge_complex. Para cualquier otro N usa largest remainder sobre las proporciones valid=80%, edge_complex=15% e invalid=5%; los empates se resuelven en ese orden. Dentro de cada categoría, las clases 105, 249 y 501 bytes se asignan por round-robin comenzando en 105.
+
+El identificador es `p0-{validity_class}-{payload_class:03d}-{index:07d}`. La escritura ordena todos los fixtures lexicográficamente por ese identificador, y el mismo orden se usa para `expected-results.jsonl` y el listado del manifest.
 
 Los casos válidos se construyen con campos dentro de rango. Los inválidos se derivan de un caso válido aplicando una sola mutación nombrada: truncation, bad_magic, bad_version, length_mismatch, range_violation, unsupported_protocol o checksum_failure. Los edge/complex cubren igualdad de umbral, mínimos y máximos legales, sensor opcional ausente y área de sensores máxima.
 
@@ -47,7 +49,7 @@ El orden de los sensores es estrictamente creciente por id. El resultado lógico
 
 ## 6. Oráculo
 
-El oráculo implementa la misma semántica, pero con límites explícitos y sin reutilizar código que una implementación B0/B1 deba compartir:
+El oráculo implementa la misma semántica, pero con límites explícitos y sin reutilizar código que una implementación B0/B1 deba compartir. Su interfaz es `oracle_bytes(payload, rule_table_path=None)`. Cuando la ruta es `None`, se resuelve de forma determinista a `specification/rule-table.json` desde la raíz del repositorio; las pruebas aisladas pueden pasar una ruta explícita:
 
 1. F1 verifica truncation, magic, version, length, protocol, ranges y checksum en ese orden.
 2. F2 decodifica a una estructura de enteros y registros ordenados.
@@ -66,17 +68,19 @@ La interfaz será:
     python -m tools.dataset.verify --dataset datasets
     python -m tools.dataset.oracle --input datasets/fixtures --output datasets/expected-results.jsonl
 
-generate debe rechazar un directorio de salida no vacío salvo que se indique una opción explícita de reemplazo para un directorio temporal. verify no modifica archivos. oracle solo escribe en una ruta temporal o en un archivo nuevo y falla si el resultado ya existe.
+`generate` debe rechazar un directorio de salida no vacío salvo que se indique `--replace`. `verify` no modifica archivos. `oracle` solo escribe en un archivo nuevo y falla si el resultado ya existe; nunca sobrescribe ni acepta reemplazo implícito.
 
 ## 8. Pruebas
 
-Las pruebas deben cubrir la secuencia conocida de SplitMix64, CRC-32C con vector conocido, offsets, longitudes 105/249/501, límites inclusivos, precedencia F1, igualdad de thresholds, sensor ausente, estabilidad byte-a-byte, sensibilidad a seed/version, conteos exactos, manifest, SHA-256, JSON Schema y separación entre rejection y execution_failure.
+Las pruebas deben cubrir la secuencia conocida de SplitMix64, CRC-32C con vector conocido, offsets, longitudes 105/249/501, límites inclusivos, precedencia F1, igualdad de thresholds, sensor ausente, estabilidad byte-a-byte, sensibilidad a seed/version, cuotas exactas para N=300 y N=1,000,000, manifest, SHA-256, validación estructural de `datasets/expected-results.schema.json`, validación del contrato de datos aplicable a cada resultado y separación entre rejection y execution_failure.
 
 La prueba de integración debe generar un dataset pequeño de 300 fixtures en un directorio temporal y verificarlo sin escribir en el dataset canónico del repositorio.
 
 ## 9. Integridad y auditoría
 
-El manifest registra dataset_id, generator_version, oracle_version, seed, PRNG, schema versions, payload classes, counts, fixture ordering, digest algorithm y cada fixture con fixture_id, category, class, filename, size, sha256 y expected_result_line. Cualquier diferencia de digest, conteo, orden o versión invalida la ejecución.
+El manifest registra dataset_id, generator_version, oracle_version, seed, PRNG, schema versions, payload classes, counts, fixture ordering, digest algorithm y cada fixture con fixture_id, category, class, filename, size, sha256 y expected_result_line. `verify` reejecuta el oráculo sobre cada fixture y compara el resultado JSON canónico con la línea esperada; no regenera ni reemplaza los archivos fuente. Cualquier diferencia de digest, conteo, orden, esquema o versión invalida la ejecución.
+
+El artefacto de 1,000,000 casos se genera en un directorio de release explícito fuera del árbol versionado, salvo aprobación de la política del repositorio para almacenar los binarios. El repositorio conserva el manifest, su digest y la documentación de la ejecución.
 
 Los fixtures canónicos no se regeneran durante una corrida de benchmark. La generación y la verificación son pasos previos; el benchmark solo lee entradas inmutables.
 

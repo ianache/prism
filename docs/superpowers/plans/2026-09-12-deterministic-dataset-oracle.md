@@ -32,7 +32,8 @@
 
 **Interfaces:**
 - Define dataclasses SensorRecord(id, kind, value), TelemetryFrame(device_id, timestamp_unix_s, latitude_e7, longitude_e7, speed_cm_per_s, heading_cdeg, ignition, battery_mv, sensors, flags=0, protocol=1), and Rejection(code, stage, context).
-- Define oracle_bytes(payload), generate_dataset(output, seed, count, replace=False), and verify_dataset(dataset).
+- Define `oracle_bytes(payload, rule_table_path=None)`, `generate_dataset(output, seed, count, replace=False)`, and `verify_dataset(dataset)`.
+- `oracle_bytes` uses `specification/rule-table.json` resolved from the repository root when `rule_table_path` is omitted; callers may pass an explicit path for isolated tests.
 - Define module entry points that accept --help before implementation exists.
 
 - [ ] Step 1: Write failing CLI contract tests for imports, --help, and oracle_bytes on empty input.
@@ -86,13 +87,13 @@
 **Interfaces:**
 - load_rule_table(path) validates rule_set_id, version, precedence sequence, units, and default.
 - evaluate_rules(frame, rule_table) returns label, severity, and route.
-- oracle_bytes(payload, rule_table_path) returns normalized_telemetry, rejection, or execution_failure.
+- `oracle_bytes(payload, rule_table_path=None)` returns normalized_telemetry, rejection, or execution_failure. The default rule-table path is the repository-root `specification/rule-table.json`.
 
 - [ ] Step 1: Write tests for R001-R004 equality and thresholds, missing sensor 1, first-match conflict, and default classification.
 - [ ] Step 2: Write oracle tests for a valid frame, every F1 rejection, and an unexpected exception represented as execution_failure.
 - [ ] Step 3: Run python -m unittest tests.dataset.test_rules tests.dataset.test_oracle -v and confirm failure.
 - [ ] Step 4: Implement integer-only rule evaluation and ordered sensor preservation.
-- [ ] Step 5: Implement the oracle without importing a future runtime implementation; keep execution failures distinct from typed rejections.
+- [ ] Step 5: Implement the oracle without importing a future runtime implementation; keep execution failures distinct from typed rejections and make rule-table path resolution explicit and deterministic.
 - [ ] Step 6: Run focused tests and confirm pass.
 - [ ] Step 7: Commit with git add tools/dataset/rules.py tools/dataset/oracle.py tests/dataset/test_rules.py tests/dataset/test_oracle.py and git commit -m "feat: add deterministic telemetry oracle".
 
@@ -103,7 +104,7 @@
 - Create: tests/dataset/test_generate.py
 
 **Interfaces:**
-- fixture_id(index, validity_class, payload_class) returns the stable documented identifier.
+- `fixture_id(index, validity_class, payload_class)` returns `p0-{validity_class}-{payload_class:03d}-{index:07d}`; output is sorted by this identifier before writing.
 - generate_case(index, validity_class, payload_class, rng) returns fixture id, bytes, and expected result.
 - write_manifest(path, manifest) writes sorted-key canonical JSON plus LF.
 - generate_dataset(output, seed, count, replace=False) writes fixtures, expected-results.jsonl, manifest, and manifest.sha256 through a temporary sibling directory.
@@ -112,7 +113,7 @@
 - [ ] Step 2: Write repeatability tests comparing every file from two generations with the same seed.
 - [ ] Step 3: Write mutation coverage tests for every required invalid and edge case.
 - [ ] Step 4: Run python -m unittest tests.dataset.test_generate -v and confirm failure.
-- [ ] Step 5: Implement deterministic assignment, valid field generation, one-mutation invalid cases, edge cases, digests, and atomic promotion.
+- [ ] Step 5: Implement deterministic assignment, valid field generation, one-mutation invalid cases, edge cases, digests, and atomic promotion. For any count, allocate category quotas with largest remainder using valid=80%, edge_complex=15%, invalid=5%; ties resolve in the order valid, edge_complex, invalid. Payload classes rotate 105, 249, 501 within each category.
 - [ ] Step 6: Run focused tests and confirm pass.
 - [ ] Step 7: Extend datasets/manifest.json with generator version, oracle version, fixture list, and exact counts while preserving schema_version 1.0.
 - [ ] Step 8: Commit with git add tools/dataset/generate.py datasets/manifest.json datasets/README.md datasets/generator-spec.md tests/dataset/test_generate.py and git commit -m "feat: generate deterministic telemetry fixtures".
@@ -125,12 +126,12 @@
 
 **Interfaces:**
 - canonical_json_bytes(value) returns sorted-key UTF-8 JSON with LF.
-- verify_fixture(path, expected) checks size, SHA-256, payload class, and oracle result.
-- verify_dataset(dataset) raises descriptive ValueError on any manifest, ordering, digest, count, schema, or result mismatch.
+- `verify_fixture(path, expected)` checks size, SHA-256, payload class, envelope schema, the corresponding `contracts/data/*.schema.json` result shape, and the oracle result.
+- `verify_dataset(dataset)` raises descriptive ValueError on any manifest, ordering, digest, count, schema, or result mismatch. It never rewrites fixtures or expected-results; regeneration comparison means re-running the oracle over every fixture and comparing canonical expected-result bytes.
 
 - [ ] Step 1: Write tests for successful verification and altered bytes, digest, missing fixture, wrong order, wrong count, invalid expected result, and oracle mismatch.
 - [ ] Step 2: Run python -m unittest tests.dataset.test_verify -v and confirm failure.
-- [ ] Step 3: Implement strict manifest/JSONL parsing, standard-library schema-shaped checks, and regeneration comparison.
+- [ ] Step 3: Implement strict manifest/JSONL parsing, standard-library schema-shaped checks for `datasets/expected-results.schema.json` plus the applicable data contract, and the read-only oracle regeneration comparison.
 - [ ] Step 4: Run focused tests and confirm pass.
 - [ ] Step 5: Commit with git add tools/dataset/verify.py datasets/expected-results.schema.json datasets/oracle-spec.md tests/dataset/test_verify.py and git commit -m "feat: verify dataset integrity and oracle results".
 
@@ -145,11 +146,12 @@
   python -m tools.dataset.generate --output <temp> --seed 0x505249534D5F5631 --count 300
   python -m tools.dataset.verify --dataset <temp>
   python -m tools.dataset.oracle --input <temp>/fixtures --output <temp>/expected-results.jsonl
+- `generate` rejects a non-empty output directory unless `--replace` is explicit. `oracle` always rejects an existing output file and never overwrites it.
 
 - [ ] Step 1: Write an integration test invoking generate and verify in a temporary directory and asserting the repository dataset is unchanged.
 - [ ] Step 2: Add CLI tests for non-empty output rejection, explicit replacement, invalid seed, invalid count, and missing input.
 - [ ] Step 3: Run python -m unittest discover -s tests/dataset -v and inspect failures.
-- [ ] Step 4: Implement final argparse errors and document clean-machine workflow, output layout, immutability, and the 1,000,000-case command.
+- [ ] Step 4: Implement final argparse errors and document clean-machine workflow, output layout, immutability, the quota rule for arbitrary counts, and the 1,000,000-case command.
 - [ ] Step 5: Run the full dataset suite and confirm all tests pass without network or third-party dependencies.
 - [ ] Step 6: Commit with git add tests/dataset docs/dataset-generation.md datasets/README.md datasets/fixtures/README.md and git commit -m "docs: verify dataset generation workflow".
 
@@ -161,7 +163,7 @@
 
 - [ ] Step 1: Generate a 300-fixture smoke dataset in a temporary directory and run verify.
 - [ ] Step 2: Run python -m unittest discover -s tests/dataset -v and JSON syntax checks.
-- [ ] Step 3: Generate the full 1,000,000-case artifact only after smoke verification; record manifest digest, counts, versions, and command in datasets/RELEASE.md. Keep raw binaries out of Git unless repository policy approves their size.
+- [ ] Step 3: Generate the full 1,000,000-case artifact only after smoke verification in an explicitly documented release/output directory outside the Git-tracked tree; record manifest digest, counts, versions, and command in datasets/RELEASE.md. Keep raw binaries out of Git unless repository policy approves their size.
 - [ ] Step 4: Run verify against the full release artifact and record the result.
 - [ ] Step 5: Append measured task/plan consumption to docs/consumo.md; use N/D when the provider does not expose a value.
 - [ ] Step 6: Commit with git add datasets/RELEASE.md datasets/README.md docs/consumo.md and git commit -m "docs: release deterministic dataset oracle artifact".
