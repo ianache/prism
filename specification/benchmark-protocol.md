@@ -1,38 +1,36 @@
-# Telemetry Benchmark Protocol Specification Map
+# Telemetry Benchmark Protocol
 
-**Status:** Specification skeleton; measurements are not comparable until blocking protocol decisions in the [gap report](gap-ambiguity-report.md) resolve.
+**Status:** Frozen v1 protocol.
 
-## Dataset
+## Dataset and benchmark levels
 
-Every implementation consumes identical deterministic PRISM-owned binary frames and independently generated expected outcomes. Payload classes are approximately 100, 250, and 500 bytes. Workload composition is fixed at 80% valid, 5% invalid, and 15% edge/complex. Invalid coverage includes truncation, bad magic/version, length mismatch, range violation, unsupported protocol, and checksum failure.
+All implementations consume identical raw binary fixtures and expected JSONL results from datasets/. Workload composition is 80 percent valid, 5 percent invalid, and 15 percent edge/complex. Payload classes are 105, 249, and 501 bytes.
 
-Fixture encoding, seed, manifest, and oracle-comparison format are `BLOCKING` as `DATA-001` in the [gap report](gap-ambiguity-report.md#blocking-decision-register). Logical frame/data semantics are mapped in [telemetry workflow](telemetry-workflow.md#frame-semantics).
-
-## Benchmark levels and scenarios
-
-| Level | Scope |
+| Level | Definition |
 | --- | --- |
-| B0 Native | Direct equivalent functions without PRISM abstraction. |
-| B1 Workflow | PRISM contracts, registry, filter invocation, and sequential F1-F6 pipeline. |
-| B2 Observable | B1 plus execution ID, per-filter timing, metrics, and tracing variants. |
-| B3 Distributed | P1 producer/worker transport at workflow boundaries; never a broker between every filter. |
+| B0 | direct native equivalent functions without PRISM abstraction |
+| B1 | PRISM contracts, registry, and sequential F1-F6 pipeline |
+| B2 | B1 plus execution id, per-filter timing, metrics, and tracing variant |
+| B3 | producer/worker transport at workflow boundaries for future P1 evaluation |
 
-Scenarios are S1 single-frame latency, S2 one million sequential frames, S3 concurrency at 1/2/4/8/16/32/64 where meaningful, S4 approximately 10x burst and recovery, and S5 15–30 minute sustained load. Runs must be warmed and steady-state, cover every payload/workload class, and preserve raw results. Warm-up, repetitions, sampling, and aggregation are `BLOCKING` as `BENCH-001`.
+## Timer and taxes
 
-## Timers
+The primary timer starts with a resident frame ready for processing and ends at the final success or typed rejection. Dataset I/O, startup, contract loading, result writing, and orchestration are excluded and reported separately. Use a monotonic nanosecond clock.
 
-The primary latency timer starts when a frame is resident and ready for processing and ends when final success or typed rejection is produced. It excludes dataset I/O, process startup, contract loading, result writing, and orchestration; excluded work is reported separately.
+Matched percentile values define tax_percent(A,B) = (B-A)/A*100. Workflow Tax = (B1 p99 - B0 p99) / B0 p99 * 100, with equivalent formulas for B2/B1 and B3/B2. Negative values are retained and reported, not clamped.
 
-Matched runs calculate `Workflow Tax = B1 - B0`, `Observability Tax = B2 - B1`, and `Distribution Tax = B3 - B2` using the same percentile metric and a frozen percentage formula. Timer resolution, sampling, and comparison formula are `BLOCKING` as `BENCH-001` because they are required for comparable measurements.
+## Run protocol
 
-## Metrics
+Warm until 10,000 frames have run and two consecutive 1,000-frame windows differ by no more than 5 percent in p99. Then execute five measured repetitions of 1,000,000 frames for S2. Percentiles use nearest-rank over all measured frame samples; no outlier removal. S1 uses 10,000 measured frames after warm-up, S3 tests concurrency 1/2/4/8/16/32/64 where meaningful, S4 uses baseline then approximately 10x burst and recovery, and S5 runs 15-30 minutes.
 
-Required latency metrics are p50, p95, p99, p99.9, and max; p99 is primary and average latency is not a decision metric. Record frames/sec, MB/sec, CPU utilization, CPU ns/frame where available, RSS, heap, allocations/frame, allocated bytes/frame, memory growth, and applicable GC/JIT/context-switch data.
+Every comparable run includes all payload classes and workload categories. A run is invalid if required metadata or correctness records are missing.
 
-The authoritative gate-to-metric mapping is [acceptance criteria](acceptance-criteria.md#gate-to-metric-map). Correctness uses the independent oracle and is a hard prerequisite before performance gates can qualify a runtime.
+## Required metrics and metadata
 
-## Reporting and reproducibility
+Record p50, p95, p99, p99.9, max, frames/sec, MB/sec, CPU utilization, CPU ns/frame where available, RSS, heap, allocations/frame, allocated bytes/frame, memory growth, and applicable GC/JIT/context-switch data. Metadata must include CPU model, physical/logical cores, RAM, OS/kernel, runtime/compiler, governor, container limits, commit, dataset digest, command, run id, and affinity.
 
-Reports are generated from preserved machine-readable raw records; hand-edited benchmark results are forbidden. A report includes implementation, level, scenario, concurrency, payload class, percentile values, correctness count, memory metrics, gate evaluation, threats to validity, and decision-matrix input.
+## Reporting
 
-Comparable primary runs require CPU model, physical/logical cores, RAM, OS/kernel, runtime/compiler version, CPU governor, container limits, commit, dataset digest, and command metadata. The exact collection and normalization policy is `BLOCKING` as `BENCH-002` in the [gap report](gap-ambiguity-report.md#blocking-decision-register). JIT warm-up, garbage collection, CPU frequency variation, scheduler noise, timer resolution, compiler optimization, and allocation behavior must be reported as threats to validity.
+Raw machine-readable records are immutable inputs. Reports are generated from raw records and contain gate evaluation, threats to validity, and decision-matrix input. Hand-edited benchmark results are forbidden.
+
+Threats include JIT warm-up, GC, frequency variation, scheduler noise, timer resolution, compiler optimization, and allocation behavior.
