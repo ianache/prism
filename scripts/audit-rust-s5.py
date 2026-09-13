@@ -47,6 +47,8 @@ def main():
             value = row.get(name)
             if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) or value < 0:
                 fail(f"invalid metric: {name}")
+        if not isinstance(row.get("duration_seconds"), (int, float)) or not math.isfinite(row["duration_seconds"]) or row["duration_seconds"] <= 0:
+            fail("invalid duration_seconds")
         for name in ("rss_before_bytes", "rss_after_bytes"):
             value = row.get(name)
             if value != "N/D" and (not isinstance(value, int) or value < 0):
@@ -60,6 +62,10 @@ def main():
     for group in grouped.values():
         if [row["window_index"] for row in group] != list(range(len(group))):
             fail("non-contiguous window indices")
+    for repetition in REPETITIONS:
+        key_sets = {tuple(row["window_index"] for row in grouped[(level, repetition)]) for level in LEVELS}
+        if len(key_sets) != 1:
+            fail("unpaired level windows")
     indexed = {(row["level"], row["repetition"], row["window_index"]): row for row in rows}
     for level in LEVELS:
         for repetition in REPETITIONS:

@@ -14,6 +14,7 @@ def make_row(level, repetition, window, p99):
         "protocol_version": "1.1", "measured_frames": 100000, "dataset_id": "d", "dataset_digest": "a" * 64,
         "correctness_total": 100000, "correctness_matches": 100000, "p50_ns": 1, "p95_ns": 2, "p99_ns": p99,
         "p99_9_ns": 3, "max_ns": 4, "frames_per_sec": 1.0, "mb_per_sec": 1.0,
+        "duration_seconds": 0.2,
         "rss_before_bytes": "N/D", "rss_after_bytes": "N/D", "workflow_tax_percent": 0.0, "observability_tax_percent": 0.0,
     }
 
