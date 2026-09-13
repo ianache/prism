@@ -1,5 +1,11 @@
 # Registro de consumo
 
+| 2026-09-13 | rust-s5-stability-remediation | tarea 1: identidad y timestamps diagnósticos | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Campos de frontera serializados; smoke y suite prism-bench release correctos. |
+| 2026-09-13 | rust-s5-stability-remediation | tarea 2: auditoría, pairing y reporte diagnóstico | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Auditoría acepta timestamps, reporta tails y gates; tests focalizados correctos. |
+| 2026-09-13 | rust-s5-stability-remediation | tarea 3: corrida externa remediada de 900 s | COMPLETADO | 2026-09-13 11:50:40 | 2026-09-13 12:33:00 | 2540 | N/D | N/D | N/D | reloj del proceso | Preflight vinculado al commit 082900d; salida inmutable con 615 ventanas y código 0. |
+| 2026-09-13 | rust-s5-stability-remediation | tarea 4: comparación y nota de evidencia | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Raw SHA-256 0dbda7cc...; correctness/RSS PASS, p99 FAIL; causa raíz no aislada. |
+| 2026-09-13 | rust-s5-stability-remediation | tarea 5: verificación final y publicación | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Suite final, commit 779fae9 y evidencia documentada; integración a main queda sujeta a decisión. |
+
 | Fecha | Plan | Identificador y tarea | Estado | Inicio | Fin | Tiempo (s) | Tokens entrada | Tokens salida | Tokens totales | Fuente medición | Observaciones |
 |---|---|---|---|---|---|---:|---:|---:|---:|---|---|
 | 2026-09-12 | telemetry-specification-freeze | plan completo | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Ejecución en worktree aislado; medición de tiempo y tokens no disponible. |
@@ -80,4 +86,4 @@
 | 2026-09-13 | rust-s5-evidence-completion | tarea 4: auditoría, reporte y gates S5 | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Auditoría aceptada con gate p99 negativo y RSS PASS; corrección PASS, RSS máximo 0.669886%, p99 máximo 124.015748%; reporte generado. |
 | 2026-09-13 | rust-s5-evidence-completion | tarea 5: verificación final y publicación de evidencia | PARCIAL | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Evidencia documentada; falta integrar/publicar los cambios documentales y no se reclama P0 por fallo del gate p99. |
 | 2026-09-13 | rust-s5-stability-remediation | plan y especificación S5 Stability Remediation 100K | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Alcance aprobado para diagnosticar y remediar el fallo p99 sin cambiar la meta de 100.000 frames ni el umbral provisional. |
-| 2026-09-13 | rust-s5-stability-remediation | plan completo: S5 Stability Remediation 100K | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Especificación aprobada y plan detallado creado; pendiente de ejecución. |
+| 2026-09-13 | rust-s5-stability-remediation | plan completo: S5 Stability Remediation 100K | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Diagnóstico, corrida remediada, comparación y verificación final completados; p99 sigue FAIL y no se reclama P0. |

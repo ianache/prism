@@ -118,7 +118,14 @@ git ls-files "*100k*"
 - [ ] **Step 3: Confirm no raw external JSONL, binary fixture, or host-specific temporary output is tracked.**
 - [ ] **Step 4: Mark each task and the plan in `docs/consumo.md` with actual status, time, and provider measurements; use `N/D` where unavailable.**
 - [ ] **Step 5: Merge the isolated branch into `main` and publish only after the evidence note is internally consistent.**
-- [ ] **Step 6: Report commit, evidence paths, root-cause conclusion, gate statuses, and explicit non-qualification.**
+- [x] **Step 6: Report commit, evidence paths, root-cause conclusion, gate statuses, and explicit non-qualification.**
+
+## Execution outcome
+
+Tasks 1–5 were executed in the isolated worktree. The diagnostic fields and
+audit/report checks are implemented; the full remediated run completed with
+615 valid windows. Correctness and RSS passed, while p99 stability remained
+failed. The root cause is unresolved, and no P0 qualification is claimed.
 
 ## Self-review
 
