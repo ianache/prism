@@ -1,6 +1,8 @@
 # Registro de consumo
 
-| 2026-09-13 | rust-s9-multiclient-backpressure | tarea 1: CLI de workers y cola | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Parámetros acotados, defaults S8 preservados y validación implementada. |
+| 2026-09-13 | rust-s10-operational-lifecycle | plan y especificación S10 Operational Lifecycle | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Especificación aprobada y plan detallado creado; implementación pendiente. |
+
+ | 2026-09-13 | rust-s9-multiclient-backpressure | tarea 1: CLI de workers y cola | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Parámetros acotados, defaults S8 preservados y validación implementada. |
 | 2026-09-13 | rust-s9-multiclient-backpressure | tarea 2: pool de workers acotado | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Pool fijo, contador de capacidad y procesamiento serial por conexión implementados. |
 | 2026-09-13 | rust-s9-multiclient-backpressure | tarea 3: saturación y backpressure | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | `CAPACITY_EXCEEDED` explícito, recuperable y listener persistente. |
 | 2026-09-13 | rust-s9-multiclient-backpressure | tarea 4: pruebas multi-cliente y recuperación | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Multi-cliente, orden por conexión, aislamiento y EOF cubiertos. |
