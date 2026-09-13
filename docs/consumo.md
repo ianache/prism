@@ -1,5 +1,7 @@
 # Registro de consumo
 
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | plan y especificación S6 P99 Root-Cause Isolation 100K | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Especificación aprobada y plan detallado creado; implementación pendiente. |
+
 | Fecha | Plan | Identificador y tarea | Estado | Inicio | Fin | Tiempo (s) | Tokens entrada | Tokens salida | Tokens totales | Fuente medición | Observaciones |
 |---|---|---|---|---|---|---:|---:|---:|---:|---|---|
 | 2026-09-12 | telemetry-specification-freeze | plan completo | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Ejecución en worktree aislado; medición de tiempo y tokens no disponible. |
