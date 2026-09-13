@@ -5,6 +5,7 @@
 | 2026-09-13 | rust-s5-stability-remediation | tarea 3: corrida externa remediada de 900 s | COMPLETADO | 2026-09-13 11:50:40 | 2026-09-13 12:33:00 | 2540 | N/D | N/D | N/D | reloj del proceso | Preflight vinculado al commit 082900d; salida inmutable con 615 ventanas y código 0. |
 | 2026-09-13 | rust-s5-stability-remediation | tarea 4: comparación y nota de evidencia | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Raw SHA-256 0dbda7cc...; correctness/RSS PASS, p99 FAIL; causa raíz no aislada. |
 | 2026-09-13 | rust-s5-stability-remediation | tarea 5: verificación final y publicación | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Suite final, commit 779fae9 y evidencia documentada; integración a main queda sujeta a decisión. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | plan y especificación S6 P99 Root-Cause Isolation 100K | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Especificación aprobada y plan detallado creado; implementación pendiente. |
 
 | Fecha | Plan | Identificador y tarea | Estado | Inicio | Fin | Tiempo (s) | Tokens entrada | Tokens salida | Tokens totales | Fuente medición | Observaciones |
 |---|---|---|---|---|---|---:|---:|---:|---:|---|---|
