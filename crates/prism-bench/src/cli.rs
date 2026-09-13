@@ -101,6 +101,9 @@ where
     if levels.split(',').any(|level| !matches!(level, "b0" | "b1" | "b2")) {
         return Err(CliError::InvalidLevel);
     }
+    if levels.split(',').any(|level| level == "b2") && !levels.split(',').any(|level| level == "b1") {
+        return Err(CliError::MissingValue);
+    }
     if warmup == 0 || samples == 0 || repetitions == 0 || concurrency != 1 {
         return Err(CliError::MissingValue);
     }

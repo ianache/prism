@@ -67,5 +67,17 @@ S1 es evidencia de ingeniería y no constituye una calificación P0. El release
 externo de 1,000,000 de archivos individuales permanece pendiente y fuera de
 Git.
 
+## B2
+
+B2 usa la misma meta v1.1 de 100.000 frames por repetición. Auditar una salida
+B2 contra su baseline B1:
+
+```text
+python scripts/audit-rust-b2.py --baseline <b1.jsonl> --raw <b2.jsonl>
+```
+
+La auditoría exige cinco repeticiones, campos F1–F6 completos, corrección,
+protocolo v1.1 y tax de observabilidad calculado por repetición.
+
 The evidence package does not claim P0, B2/B3, or S2–S5 qualification. Host
 resource values that cannot be collected are emitted as `N/D`.

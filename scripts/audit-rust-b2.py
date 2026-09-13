@@ -6,14 +6,19 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--baseline', type=Path, required=True)
     parser.add_argument('--raw', type=Path, required=True)
     args = parser.parse_args()
+    baseline = [json.loads(line) for line in args.baseline.read_text(encoding='utf-8').splitlines() if line]
     rows = [json.loads(line) for line in args.raw.read_text(encoding='utf-8').splitlines() if line]
+    if len(baseline) != 5 or {row.get('level') for row in baseline} != {'b1'}:
+        raise SystemExit('expected five B1 baseline records')
     if len(rows) != 5 or {row.get('level') for row in rows} != {'b2'}:
         raise SystemExit('expected five B2 records')
     if [row.get('repetition') for row in rows] != [1, 2, 3, 4, 5]:
         raise SystemExit('expected repetitions 1..5')
     required = {'protocol_version', 'observability_variant', 'execution_id', 'filter_timings_ns', 'filter_invocations', 'filter_rejections', 'filter_execution_failures', 'observability_tax_percent'}
+    base_by_rep = {row['repetition']: row for row in baseline}
     for row in rows:
         missing = required - row.keys()
         if missing:
@@ -28,6 +33,10 @@ def main():
             raise SystemExit('invalid filter timing')
         if not math.isfinite(row['observability_tax_percent']):
             raise SystemExit('invalid observability tax')
+        base = base_by_rep[row['repetition']]['p99_ns']
+        expected_tax = 0.0 if base == 0 else (row['p99_ns'] - base) / base * 100.0
+        if not math.isclose(row['observability_tax_percent'], expected_tax, rel_tol=1e-9, abs_tol=1e-9):
+            raise SystemExit(f'observability tax mismatch in {row["run_id"]}')
     print(f'ok rows={len(rows)} frames=100000')
 
 
