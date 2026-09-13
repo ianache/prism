@@ -37,6 +37,12 @@ def main():
     rss_max = max(rss_changes) if rss_changes else None
     diagnostic_rows = [row for row in rows if "window_started_ns" in row]
     monotonic = all(row["window_finished_ns"] > row["window_started_ns"] for row in diagnostic_rows)
+    cpu_rows = [row for row in diagnostic_rows if all(isinstance(row.get(name), int) for name in ("process_cpu_before_ns", "process_cpu_after_ns", "system_cpu_before_ns", "system_cpu_after_ns"))]
+    cpu_ratios = []
+    for row in cpu_rows:
+        wall = row["window_finished_ns"] - row["window_started_ns"]
+        if wall > 0:
+            cpu_ratios.append((row["process_cpu_after_ns"] - row["process_cpu_before_ns"]) / wall * 100.0)
     trend_lines = []
     for (level, repetition), group in groups.items():
         if group and group[0].get("p99_ns"):
@@ -47,7 +53,7 @@ def main():
     lines.append(gate("Correctness", "PASS" if all(row.get("correctness_total") == row.get("correctness_matches") for row in rows) else "FAIL", "all windows match"))
     lines.append(gate("p99 stability", "PASS" if p99_max is not None and math.isfinite(p99_max) and p99_max <= 10 else "FAIL", "threshold <= 10%" if p99_max is not None else "missing p99 series"))
     lines.append(gate("RSS growth", "PASS" if rss_max is not None and rss_max <= 10 else "UNAVAILABLE", "threshold < 10%" if rss_max is not None else "RSS not available"))
-    lines += ["", "## Diagnostics", "", f"Timestamp diagnostics: {'PRESENT' if diagnostic_rows else 'UNAVAILABLE'}", f"Window boundary ordering: {'PASS' if monotonic else 'FAIL'}", "", "| Level | Rep | Windows | First p99 (ns) | Last p99 (ns) | First-to-last change |", "|---|---:|---:|---:|---:|---:|"] + trend_lines
+    lines += ["", "## Diagnostics", "", f"Timestamp diagnostics: {'PRESENT' if diagnostic_rows else 'UNAVAILABLE'}", f"Window boundary ordering: {'PASS' if monotonic else 'FAIL'}", f"CPU telemetry: {'PRESENT' if cpu_rows else 'UNAVAILABLE'}", f"Process CPU/wall ratio range: {min(cpu_ratios):.6f}%–{max(cpu_ratios):.6f}%" if cpu_ratios else "Process CPU/wall ratio range: UNAVAILABLE", "", "| Level | Rep | Windows | First p99 (ns) | Last p99 (ns) | First-to-last change |", "|---|---:|---:|---:|---:|---:|"] + trend_lines
     lines += ["", "## Hypotheses", "", "| Hypothesis | Evidence | Conclusion |", "|---|---|---|", "| Scheduler noise / frequency drift | p99 changes persist across matched windows while RSS remains below 10% | UNSOLVED; requires controlled host telemetry |", "| Resource growth | RSS gate and bounded growth | NOT SUPPORTED as primary cause |", "| Orchestration artifact | Unequal tails are reported without dropping common windows | POSSIBLE CONTRIBUTOR; not proven |", "", "## Limitations", "", "The result is single-host engineering evidence and is not an automatic P0 qualification. Thermal drift, scheduler noise, frequency changes, and unavailable platform metrics remain threats to validity."]
     args.output.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {args.output} rows={len(rows)} sha256={raw_digest}")
