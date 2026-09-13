@@ -41,6 +41,14 @@ pub struct RawRecord {
     pub dataset_digest: String,
     pub workflow_tax_percent: f64,
     pub metadata: BTreeMap<String, String>,
+    pub protocol_version: String,
+    pub observability_variant: String,
+    pub execution_id: String,
+    pub filter_timings_ns: BTreeMap<String, u128>,
+    pub filter_invocations: BTreeMap<String, usize>,
+    pub filter_rejections: BTreeMap<String, usize>,
+    pub filter_execution_failures: BTreeMap<String, usize>,
+    pub observability_tax_percent: f64,
 }
 
 fn escape(value: &str) -> String {

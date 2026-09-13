@@ -39,6 +39,7 @@ fn main() {
         let level = match level_name {
             "b0" => Level::B0,
             "b1" => Level::B1,
+            "b2" => Level::B2,
             _ => unreachable!(),
         };
         match run_level(level, &dataset, &run_config) {
@@ -123,6 +124,14 @@ fn main() {
                     )
                 },
                 metadata: metadata.clone(),
+                protocol_version: "1.1".into(),
+                observability_variant: run.observability_variant.clone(),
+                execution_id: run.execution_id.clone(),
+                filter_timings_ns: run.filter_timings_ns.clone(),
+                filter_invocations: run.filter_invocations.clone(),
+                filter_rejections: run.filter_rejections.clone(),
+                filter_execution_failures: run.filter_execution_failures.clone(),
+                observability_tax_percent: 0.0,
             });
         }
     }

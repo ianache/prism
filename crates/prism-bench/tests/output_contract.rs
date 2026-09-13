@@ -43,6 +43,14 @@ fn record() -> RawRecord {
         dataset_digest: "abc".into(),
         workflow_tax_percent: -10.0,
         metadata: BTreeMap::new(),
+        protocol_version: "1.1".into(),
+        observability_variant: "local_metrics".into(),
+        execution_id: "exec-1".into(),
+        filter_timings_ns: BTreeMap::new(),
+        filter_invocations: BTreeMap::new(),
+        filter_rejections: BTreeMap::new(),
+        filter_execution_failures: BTreeMap::new(),
+        observability_tax_percent: 0.0,
     }
 }
 
