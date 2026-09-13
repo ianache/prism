@@ -3,7 +3,7 @@ use std::fs;
 
 use prism_bench::output::{
     workflow_tax_for_concurrency_repetition, workflow_tax_for_repetition, workflow_tax_percent,
-    write_once_atomic, OutputError, RawRecord,
+    workflow_tax_for_phase_repetition, write_once_atomic, OutputError, RawRecord,
 };
 
 fn record() -> RawRecord {
@@ -52,6 +52,17 @@ fn record() -> RawRecord {
         filter_rejections: BTreeMap::new(),
         filter_execution_failures: BTreeMap::new(),
         observability_tax_percent: 0.0,
+        phase: "burst".into(),
+        offered_frames_per_sec: 100.0,
+        processed_frames_per_sec: 90.0,
+        late_frames: 2,
+        on_time_frames: 8,
+        lateness_p50_ns: 0,
+        lateness_p95_ns: 1,
+        lateness_p99_ns: 2,
+        calibration_median_frames_per_sec: 100.0,
+        baseline_frames_per_sec: 80.0,
+        burst_frames_per_sec: 800.0,
     }
 }
 
@@ -71,6 +82,13 @@ fn workflow_tax_uses_matching_concurrency_and_repetition() {
     let baselines = [((1, 1), 100), ((8, 1), 200), ((8, 2), 300)];
     assert_eq!(workflow_tax_for_concurrency_repetition(&baselines, 8, 2, 330), 10.0);
     assert_eq!(workflow_tax_for_concurrency_repetition(&baselines, 1, 1, 120), 20.0);
+}
+
+#[test]
+fn workflow_tax_uses_matching_phase_and_repetition() {
+    let baselines = [(("baseline".to_owned(), 1), 100), (("burst".to_owned(), 1), 200), (("burst".to_owned(), 2), 300)];
+    assert_eq!(workflow_tax_for_phase_repetition(&baselines, "burst", 2, 330), 10.0);
+    assert_eq!(workflow_tax_for_phase_repetition(&baselines, "baseline", 1, 120), 20.0);
 }
 
 #[test]
@@ -100,6 +118,15 @@ fn raw_record_serializes_required_metrics() {
         "filter_rejections",
         "filter_execution_failures",
         "observability_tax_percent",
+        "phase",
+        "offered_frames_per_sec",
+        "processed_frames_per_sec",
+        "late_frames",
+        "on_time_frames",
+        "lateness_p99_ns",
+        "calibration_median_frames_per_sec",
+        "baseline_frames_per_sec",
+        "burst_frames_per_sec",
     ] {
         assert!(json.contains(&format!("\"{key}\"")), "missing {key}");
     }

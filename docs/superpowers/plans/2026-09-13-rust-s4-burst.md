@@ -41,13 +41,13 @@
 - `Phase` is an internal enum with variants `Baseline`, `Burst`, and `Recovery`, serialized as the exact lowercase names.
 - `main.rs` creates 45 records from the three levels, three phases, and five repetitions.
 
-- [ ] Add failing Rust/Python tests for S4 acceptance, rejection of missing B0/B1/B2, rejection of non-1 concurrency, rejection of wrong frame target, exact phase names/order, and expected 45-record cardinality.
-- [ ] Run `python -m unittest tests.test_s4_protocol` and `cargo test -p prism-bench --test cli_contract --release`; confirm the S4 tests fail before implementation.
-- [ ] Implement S4 validation while preserving S1, S2, and S3 CLI behavior.
-- [ ] Add deterministic IDs containing scenario, level, phase, and repetition, such as `S4-b2-burst-r4`.
-- [ ] Document the exact S4 command and phase semantics in `docs/rust-b0-b1.md`.
-- [ ] Run focused protocol and CLI suites and confirm all pass.
-- [ ] Append the task consumption row and commit with `feat: add S4 burst CLI contract`.
+- [x] Add failing Rust/Python tests for S4 acceptance, rejection of missing B0/B1/B2, rejection of non-1 concurrency, rejection of wrong frame target, exact phase names/order, and expected 45-record cardinality.
+- [x] Run `python -m unittest tests.test_s4_protocol` and `cargo test -p prism-bench --test cli_contract --release`; confirm the S4 tests fail before implementation.
+- [x] Implement S4 validation while preserving S1, S2, and S3 CLI behavior.
+- [x] Add deterministic IDs containing scenario, level, phase, and repetition, such as `S4-b2-burst-r4`.
+- [x] Document the exact S4 command and phase semantics in `docs/rust-b0-b1.md`.
+- [x] Run focused protocol and CLI suites and confirm all pass.
+- [x] Append the task consumption row and commit with `feat: add S4 burst CLI contract`.
 
 ### Task 2: Implement calibration, schedule, and phase execution
 
@@ -63,15 +63,15 @@
 - `run_phase(level: Level, dataset: &Dataset, config: &RunConfig, schedule: &PhaseSchedule) -> Result<PhaseRun, RunError>` processes one phase and returns samples, counters, lateness metrics, and B2 evidence.
 - `run_level` retains its existing API for S1/S2/S3; S4 orchestration may use new phase-specific helpers.
 
-- [ ] Add failing tests for median calibration, exact 80% baseline rate, exact 10× burst rate, interval derivation, deterministic phase timestamps, and 100,000 scheduled frames.
-- [ ] Add failing runner tests for ordered phases, complete frame coverage, on-time versus late accounting, correctness preservation, and B2 collector ownership.
-- [ ] Run the focused burst and runner tests and confirm expected failures.
-- [ ] Implement `burst.rs` using integer nanosecond intervals and deterministic cumulative offsets; reject zero/non-finite rates and arithmetic overflow.
-- [ ] Implement B0 calibration with five measured repetitions at concurrency 1 before S4 phases; keep calibration metadata outside the phase timer.
-- [ ] Implement synchronous phase processing over resident bytes. Record each frame's scheduled offset and processing-start offset, but do not sleep inside the primary processing timer.
-- [ ] Preserve existing warm-up, nearest-rank percentiles, correctness aborts, typed rejection counts, and B2 F1–F6 evidence.
-- [ ] Run runner contracts plus all existing B0/B1/B2 runtime contracts.
-- [ ] Append the task consumption row and commit with `feat: run calibrated S4 burst phases`.
+- [x] Add failing tests for median calibration, exact 80% baseline rate, exact 10× burst rate, interval derivation, deterministic phase timestamps, and 100,000 scheduled frames.
+- [x] Add failing runner tests for ordered phases, complete frame coverage, on-time versus late accounting, correctness preservation, and B2 collector ownership.
+- [x] Run the focused burst and runner tests and confirm expected failures.
+- [x] Implement `burst.rs` using integer nanosecond intervals and deterministic cumulative offsets; reject zero/non-finite rates and arithmetic overflow.
+- [x] Implement B0 calibration with five measured repetitions at concurrency 1 before S4 phases; keep calibration metadata outside the phase timer.
+- [x] Implement synchronous phase processing over resident bytes. Record each frame's scheduled offset and processing-start offset, but do not sleep inside the primary processing timer.
+- [x] Preserve existing warm-up, nearest-rank percentiles, correctness aborts, typed rejection counts, and B2 F1–F6 evidence.
+- [x] Run runner contracts plus all existing B0/B1/B2 runtime contracts.
+- [x] Append the task consumption row and commit with `feat: run calibrated S4 burst phases`.
 
 ### Task 3: Extend raw output and pair phase taxes
 
@@ -87,13 +87,13 @@
 - S4 workflow tax is B1 p99 versus B0 p99 for the same phase/repetition; observability tax is B2 p99 versus B1 p99 for the same phase/repetition.
 - JSON serialization retains deterministic key ordering and writes 45 records atomically.
 
-- [ ] Add failing tests that parse JSON and assert all S4 identity, phase, offered-rate, processed-rate, lateness, calibration, latency, throughput, correctness, and B2 fields.
-- [ ] Add failing tax tests proving phase/repetition matching and preservation of negative values.
-- [ ] Run focused output/benchmark contracts and confirm expected failures.
-- [ ] Implement new fields and phase-keyed tax lookup without changing S1/S2/S3 schemas beyond additive compatibility.
-- [ ] Build one immutable record per `(level, phase, repetition)` and reject duplicate output paths.
-- [ ] Run output contracts, benchmark contracts, and the complete Rust workspace suite.
-- [ ] Append the task consumption row and commit with `feat: serialize S4 phase metrics`.
+- [x] Add failing tests that parse JSON and assert all S4 identity, phase, offered-rate, processed-rate, lateness, calibration, latency, throughput, correctness, and B2 fields.
+- [x] Add failing tax tests proving phase/repetition matching and preservation of negative values.
+- [x] Run focused output/benchmark contracts and confirm expected failures.
+- [x] Implement new fields and phase-keyed tax lookup without changing S1/S2/S3 schemas beyond additive compatibility.
+- [x] Build one immutable record per `(level, phase, repetition)` and reject duplicate output paths.
+- [x] Run output contracts, benchmark contracts, and the complete Rust workspace suite.
+- [x] Append the task consumption row and commit with `feat: serialize S4 phase metrics`.
 
 ### Task 4: Build the independent S4 audit
 
@@ -107,11 +107,11 @@
 - The audit requires one record for every level, phase, and repetition tuple.
 - It validates protocol identity, phase order, frame count, dataset digest/ID, finite metrics, correctness, lateness counters, calibration relationships, and phase-keyed taxes.
 
-- [ ] Create valid temporary fixtures and invalid cases for missing phase, duplicate tuple, wrong phase order, wrong scenario, wrong frame count, digest mismatch, correctness mismatch, non-finite metric, negative count, invalid calibration ratio, wrong workflow tax, and wrong observability tax.
-- [ ] Run `python -m unittest scripts.test_audit_rust_s4` and confirm the new tests fail before implementation.
-- [ ] Implement standard-library JSONL parsing, exact tuple validation, calibration/rate invariants, and phase/repetition p99 tax arithmetic.
-- [ ] Run S4 audit tests with all existing S1, S2, and S3 audit suites.
-- [ ] Document the audit command, append the task consumption row, and commit with `test: audit S4 burst evidence`.
+- [x] Create valid temporary fixtures and invalid cases for missing phase, duplicate tuple, wrong phase order, wrong scenario, wrong frame count, digest mismatch, correctness mismatch, non-finite metric, negative count, invalid calibration ratio, wrong workflow tax, and wrong observability tax.
+- [x] Run `python -m unittest scripts.test_audit_rust_s4` and confirm the new tests fail before implementation.
+- [x] Implement standard-library JSONL parsing, exact tuple validation, calibration/rate invariants, and phase/repetition p99 tax arithmetic.
+- [x] Run S4 audit tests with all existing S1, S2, and S3 audit suites.
+- [x] Document the audit command, append the task consumption row, and commit with `test: audit S4 burst evidence`.
 
 ### Task 5: Execute, verify, and publish the S4 evidence package
 
@@ -127,14 +127,14 @@
 - Exact command uses `--scenario S4 --levels b0,b1,b2 --concurrency 1 --warmup 10000 --samples 100000 --repetitions 5` plus explicit host metadata.
 - Final package contains 45 JSONL records and passes `audit-rust-s4.py`.
 
-- [ ] Run Rust workspace tests, all Python audit suites, S4 protocol tests, and focused burst contracts before the external run.
-- [ ] Execute the calibrated Rust S4 benchmark against `D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k` using a new immutable output path.
-- [ ] Parse every JSONL line with `json.loads`, verify 45 unique tuples and phase order, and run `audit-rust-s4.py`.
-- [ ] Verify correctness, offered/processed rates, lateness metrics, calibration values, per-phase p99 taxes, throughput, dataset digest, B2 evidence, and host metadata.
-- [ ] Document command, digest, output path, calibration, phase observations, limitations, and explicit non-qualification status.
-- [ ] Run final Rust/Python suites, `git diff --check`, `git status --short`, and `git ls-files '*100k*'`; confirm no binary fixture is tracked.
-- [ ] Mark all completed plan steps, append one row per task plus the final plan row to `docs/consumo.md`, and commit with `docs: finalize S4 burst increment`.
-- [ ] Merge and publish only after final verification is green; report commit and evidence paths without claiming P0 qualification.
+- [x] Run Rust workspace tests, all Python audit suites, S4 protocol tests, and focused burst contracts before the external run.
+- [x] Execute the calibrated Rust S4 benchmark against `D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k` using a new immutable output path.
+- [x] Parse every JSONL line with `json.loads`, verify 45 unique tuples and phase order, and run `audit-rust-s4.py`.
+- [x] Verify correctness, offered/processed rates, lateness metrics, calibration values, per-phase p99 taxes, throughput, dataset digest, B2 evidence, and host metadata.
+- [x] Document command, digest, output path, calibration, phase observations, limitations, and explicit non-qualification status.
+- [x] Run final Rust/Python suites, `git diff --check`, `git status --short`, and `git ls-files '*100k*'`; confirm no binary fixture is tracked.
+- [x] Mark all completed plan steps, append one row per task plus the final plan row to `docs/consumo.md`, and commit with `docs: finalize S4 burst increment`.
+- [x] Merge and publish only after final verification is green; report commit and evidence paths without claiming P0 qualification.
 
 ## Final Verification
 

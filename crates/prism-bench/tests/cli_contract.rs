@@ -54,7 +54,7 @@ fn valid_s1_config_contains_protocol_parameters() {
 #[test]
 fn cli_rejects_invalid_scenario_and_level() {
     let mut args = valid_args().to_vec();
-    args[6] = "S4";
+    args[6] = "S5";
     assert_eq!(parse_args(args), Err(CliError::InvalidScenario));
     let mut args = valid_args().to_vec();
     args[4] = "b0,b3";
@@ -100,6 +100,33 @@ fn cli_accepts_s3_with_all_concurrencies() {
     let config = parse_args(args).unwrap();
     assert_eq!(config.scenario, "S3");
     assert_eq!(config.concurrencies, vec![1, 2, 4, 8, 16, 32, 64]);
+}
+
+#[test]
+fn cli_accepts_s4_with_b0_b1_b2_and_single_concurrency() {
+    let mut args = valid_args().to_vec();
+    args[4] = "b0,b1,b2";
+    args[6] = "S4";
+    args[10] = "100000";
+    let config = parse_args(args).unwrap();
+    assert_eq!(config.scenario, "S4");
+    assert_eq!(config.concurrency, 1);
+}
+
+#[test]
+fn cli_rejects_s4_without_all_levels_or_with_parallel_concurrency() {
+    let mut missing_level = valid_args().to_vec();
+    missing_level[4] = "b0,b1";
+    missing_level[6] = "S4";
+    missing_level[10] = "100000";
+    assert_eq!(parse_args(missing_level), Err(CliError::MissingValue));
+
+    let mut parallel = valid_args().to_vec();
+    parallel[4] = "b0,b1,b2";
+    parallel[6] = "S4";
+    parallel[10] = "100000";
+    parallel.extend(["--concurrency", "2"]);
+    assert_eq!(parse_args(parallel), Err(CliError::MissingValue));
 }
 
 #[test]

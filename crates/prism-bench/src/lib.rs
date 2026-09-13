@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod burst;
 pub mod dataset;
 pub mod metadata;
 pub mod output;

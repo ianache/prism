@@ -32,6 +32,14 @@ cargo run -p prism-bench --release -- \
   --os <os> --governor <governor> --affinity <affinity>
 ```
 
+## S4
+
+S4 mide Rust B0/B1/B2 en tres fases ordenadas: `baseline`, `burst` y
+`recovery`, con 100.000 frames por fase y cinco repeticiones. La calibración
+B0 determina la capacidad de referencia; baseline usa 80% de la mediana y
+burst usa 10× baseline. El paquete final tendrá 45 registros y no constituye
+calificación P0.
+
 La medición primaria usa `Instant` alrededor del procesamiento de bytes
 residentes; I/O, carga de contratos, serialización, comparación y escritura
 quedan fuera. Los percentiles son nearest-rank.

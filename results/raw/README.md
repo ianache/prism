@@ -16,3 +16,9 @@ SHA-256: `7BC5D384ADD138D69C83AF49684715A71BED501CBFDB60BA23BCFA99459156F4`.
 The package has 105 JSONL records, five repetitions for each B0/B1/B2 and
 each concurrency in `1,2,4,8,16,32,64`; it remains outside Git and is audited
 with `scripts/audit-rust-s3.py`.
+
+S4 external evidence: `D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k-s4.jsonl`.
+SHA-256: `9E93A04938B826980DCC2F1A1DCB3D87F942169333EC32DCE3A79621B1582EC6`.
+The package has 45 JSONL records, five repetitions for each B0/B1/B2 phase in
+`baseline`, `burst`, and `recovery`; it remains outside Git and is audited
+with `scripts/audit-rust-s4.py`.
