@@ -15,6 +15,11 @@ cargo test --workspace --release
 
 ## S1
 
+The S1 records already produced with 10,000 measured frames are historical
+evidence. Starting with protocol v1.1 and B2, every comparable decision uses
+100,000 measured frames per repetition; a different target requires a new
+versioned protocol decision.
+
 El corpus se carga antes de medir. La salida JSONL se escribe una sola vez y
 se rechaza si ya existe:
 
@@ -61,6 +66,18 @@ La ejecución validada produjo 10 filas, 100.000 fixtures y digest
 S1 es evidencia de ingeniería y no constituye una calificación P0. El release
 externo de 1,000,000 de archivos individuales permanece pendiente y fuera de
 Git.
+
+## B2
+
+B2 usa la misma meta v1.1 de 100.000 frames por repetición. Auditar una salida
+B2 contra su baseline B1:
+
+```text
+python scripts/audit-rust-b2.py --baseline <b1.jsonl> --raw <b2.jsonl>
+```
+
+La auditoría exige cinco repeticiones, campos F1–F6 completos, corrección,
+protocolo v1.1 y tax de observabilidad calculado por repetición.
 
 The evidence package does not claim P0, B2/B3, or S2–S5 qualification. Host
 resource values that cannot be collected are emitted as `N/D`.

@@ -56,6 +56,24 @@ fn cli_rejects_invalid_scenario_and_level() {
     args[6] = "S2";
     assert_eq!(parse_args(args), Err(CliError::InvalidScenario));
     let mut args = valid_args().to_vec();
-    args[4] = "b0,b2";
+    args[4] = "b0,b3";
     assert_eq!(parse_args(args), Err(CliError::InvalidLevel));
+}
+
+#[test]
+fn cli_accepts_b2_level_with_the_100k_decision_target() {
+    let mut args = valid_args().to_vec();
+    args[4] = "b1,b2";
+    args[10] = "100000";
+    let config = parse_args(args).unwrap();
+    assert_eq!(config.levels, "b1,b2");
+    assert_eq!(config.measured_frames, 100_000);
+}
+
+#[test]
+fn cli_rejects_b2_without_b1_baseline() {
+    let mut args = valid_args().to_vec();
+    args[4] = "b2";
+    args[10] = "100000";
+    assert_eq!(parse_args(args), Err(CliError::MissingValue));
 }

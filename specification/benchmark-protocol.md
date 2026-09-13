@@ -1,6 +1,8 @@
 # Telemetry Benchmark Protocol
 
-**Status:** Frozen v1 protocol.
+**Status:** Frozen v1.1 protocol.
+
+**Protocol version:** 1.1
 
 ## Dataset and benchmark levels
 
@@ -21,7 +23,7 @@ Matched percentile values define tax_percent(A,B) = (B-A)/A*100. Workflow Tax = 
 
 ## Run protocol
 
-Warm until 10,000 frames have run and two consecutive 1,000-frame windows differ by no more than 5 percent in p99. Then execute five measured repetitions of 1,000,000 frames for S2. Percentiles use nearest-rank over all measured frame samples; no outlier removal. S1 uses 10,000 measured frames after warm-up, S3 tests concurrency 1/2/4/8/16/32/64 where meaningful, S4 uses baseline then approximately 10x burst and recovery, and S5 runs 15-30 minutes.
+Warm until 10,000 frames have run and two consecutive 1,000-frame windows differ by no more than 5 percent in p99. Then execute five measured repetitions of 100,000 measured frames per repetition for every comparable decision, including S2 and B2. Percentiles use nearest-rank over all measured frame samples; no outlier removal. Historical S1 evidence using 10,000 measured frames remains valid as historical evidence only. S3 tests concurrency 1/2/4/8/16/32/64 where meaningful, S4 uses baseline then approximately 10x burst and recovery, and S5 runs 15-30 minutes. Any exception to the 100,000-frame target requires a new versioned protocol decision.
 
 Every comparable run includes all payload classes and workload categories. A run is invalid if required metadata or correctness records are missing.
 

@@ -1,6 +1,7 @@
+use std::collections::BTreeMap;
 use std::time::Instant;
 
-use prism_runtime::{b0, b1::Pipeline, Outcome};
+use prism_runtime::{b0, b1::{FilterId, ObservationOutcome, Observer, Pipeline}, Outcome};
 
 use crate::dataset::Dataset;
 use crate::percentiles::percentile_nearest_rank_thousandths;
@@ -9,6 +10,7 @@ use crate::percentiles::percentile_nearest_rank_thousandths;
 pub enum Level {
     B0,
     B1,
+    B2,
 }
 
 pub struct RunConfig {
@@ -59,6 +61,35 @@ pub struct RawRun {
     pub correctness_matches: usize,
     pub typed_rejections: usize,
     pub execution_failures: usize,
+    pub observability_variant: String,
+    pub execution_id: String,
+    pub filter_timings_ns: BTreeMap<String, u128>,
+    pub filter_invocations: BTreeMap<String, usize>,
+    pub filter_rejections: BTreeMap<String, usize>,
+    pub filter_execution_failures: BTreeMap<String, usize>,
+}
+
+#[derive(Default)]
+struct Collector {
+    timings: BTreeMap<String, u128>,
+    invocations: BTreeMap<String, usize>,
+    rejections: BTreeMap<String, usize>,
+    failures: BTreeMap<String, usize>,
+}
+
+fn filter_name(filter: FilterId) -> String { format!("F{}", filter as usize + 1) }
+
+impl Observer for Collector {
+    fn on_filter(&mut self, filter: FilterId, elapsed_ns: u128, outcome: ObservationOutcome) {
+        let name = filter_name(filter);
+        *self.timings.entry(name.clone()).or_default() += elapsed_ns;
+        *self.invocations.entry(name.clone()).or_default() += 1;
+        match outcome {
+            ObservationOutcome::Rejected => *self.rejections.entry(name).or_default() += 1,
+            ObservationOutcome::ExecutionFailure => *self.failures.entry(name).or_default() += 1,
+            ObservationOutcome::Completed => {}
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -71,7 +102,7 @@ pub enum RunError {
 fn execute(level: Level, pipeline: Option<&Pipeline>, payload: &[u8]) -> Outcome {
     match level {
         Level::B0 => b0::process(payload),
-        Level::B1 => pipeline
+        Level::B1 | Level::B2 => pipeline
             .expect("B1 pipeline must be initialized outside timing")
             .process(payload),
     }
@@ -101,7 +132,7 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
     {
         return Err(RunError::InvalidConfig);
     }
-    let pipeline = (level == Level::B1).then(|| Pipeline::new().expect("static B1 registry"));
+    let pipeline = (level != Level::B0).then(|| Pipeline::new().expect("static B1 registry"));
     let warmup_target = config.warmup_frames.max(config.warmup);
     let mut previous_p99 = None;
     let mut warmed = 0usize;
@@ -136,6 +167,13 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
     let mut correctness_total = 0usize;
     let mut typed_rejections = 0usize;
     let mut execution_failures = 0usize;
+    let mut collector = Collector::default();
+    for name in ["F1", "F2", "F3", "F4", "F5", "F6"] {
+        collector.timings.insert(name.to_owned(), 0);
+        collector.invocations.insert(name.to_owned(), 0);
+        collector.rejections.insert(name.to_owned(), 0);
+        collector.failures.insert(name.to_owned(), 0);
+    }
     for repetition in 0..config.repetitions {
         let mut samples = Vec::with_capacity(config.measured_frames);
         let mut outcomes = Vec::with_capacity(config.measured_frames);
@@ -143,7 +181,11 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
         for index in 0..config.measured_frames {
             let payload = &dataset.fixtures[index % dataset.fixtures.len()];
             let frame_start = Instant::now();
-            outcomes.push(execute(level, pipeline.as_ref(), payload));
+            outcomes.push(if level == Level::B2 {
+                pipeline.as_ref().unwrap().process_observed(payload, &mut collector)
+            } else {
+                execute(level, pipeline.as_ref(), payload)
+            });
             samples.push(frame_start.elapsed().as_nanos());
         }
         let elapsed_ns = start.elapsed().as_nanos();
@@ -214,6 +256,12 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
         correctness_matches,
         typed_rejections,
         execution_failures,
+        observability_variant: if level == Level::B2 { "local_metrics".into() } else { "none".into() },
+        execution_id: format!("S1-{:?}", level),
+        filter_timings_ns: collector.timings,
+        filter_invocations: collector.invocations,
+        filter_rejections: collector.rejections,
+        filter_execution_failures: collector.failures,
     })
 }
 

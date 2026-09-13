@@ -39,6 +39,7 @@ fn main() {
         let level = match level_name {
             "b0" => Level::B0,
             "b1" => Level::B1,
+            "b2" => Level::B2,
             _ => unreachable!(),
         };
         match run_level(level, &dataset, &run_config) {
@@ -58,6 +59,11 @@ fn main() {
                 .map(|repetition| (repetition.repetition, repetition.p99_ns))
                 .collect::<Vec<_>>()
         })
+        .unwrap_or_default();
+    let b1_p99_by_repetition = runs
+        .iter()
+        .find(|(level, _)| level == "b1")
+        .map(|(_, run)| run.repetitions.iter().map(|r| (r.repetition, r.p99_ns)).collect::<Vec<_>>())
         .unwrap_or_default();
     let host = Metadata::collect(&config);
     let mut metadata = BTreeMap::new();
@@ -123,6 +129,16 @@ fn main() {
                     )
                 },
                 metadata: metadata.clone(),
+                protocol_version: "1.1".into(),
+                observability_variant: run.observability_variant.clone(),
+                execution_id: run.execution_id.clone(),
+                filter_timings_ns: run.filter_timings_ns.clone(),
+                filter_invocations: run.filter_invocations.clone(),
+                filter_rejections: run.filter_rejections.clone(),
+                filter_execution_failures: run.filter_execution_failures.clone(),
+                observability_tax_percent: if level == "b2" {
+                    workflow_tax_for_repetition(&b1_p99_by_repetition, repetition.repetition, repetition.p99_ns)
+                } else { 0.0 },
             });
         }
     }

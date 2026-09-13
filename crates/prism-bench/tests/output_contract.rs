@@ -43,6 +43,14 @@ fn record() -> RawRecord {
         dataset_digest: "abc".into(),
         workflow_tax_percent: -10.0,
         metadata: BTreeMap::new(),
+        protocol_version: "1.1".into(),
+        observability_variant: "local_metrics".into(),
+        execution_id: "exec-1".into(),
+        filter_timings_ns: BTreeMap::new(),
+        filter_invocations: BTreeMap::new(),
+        filter_rejections: BTreeMap::new(),
+        filter_execution_failures: BTreeMap::new(),
+        observability_tax_percent: 0.0,
     }
 }
 
@@ -76,6 +84,14 @@ fn raw_record_serializes_required_metrics() {
         "typed_rejections",
         "execution_failures",
         "command",
+        "protocol_version",
+        "observability_variant",
+        "execution_id",
+        "filter_timings_ns",
+        "filter_invocations",
+        "filter_rejections",
+        "filter_execution_failures",
+        "observability_tax_percent",
     ] {
         assert!(json.contains(&format!("\"{key}\"")), "missing {key}");
     }
