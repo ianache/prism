@@ -42,6 +42,7 @@ fn valid_s1_config_contains_protocol_parameters() {
     assert_eq!(config.repetitions, 5);
     assert_eq!(config.measured_frames, 10_000);
     assert_eq!(config.concurrency, 1);
+    assert_eq!(config.concurrencies, vec![1]);
     let metadata = Metadata::collect(&config);
     assert_eq!(metadata.cpu_model, "cpu");
     assert_eq!(metadata.runtime, "rust");
@@ -53,7 +54,7 @@ fn valid_s1_config_contains_protocol_parameters() {
 #[test]
 fn cli_rejects_invalid_scenario_and_level() {
     let mut args = valid_args().to_vec();
-    args[6] = "S3";
+    args[6] = "S4";
     assert_eq!(parse_args(args), Err(CliError::InvalidScenario));
     let mut args = valid_args().to_vec();
     args[4] = "b0,b3";
@@ -87,4 +88,37 @@ fn cli_accepts_s2_with_b0_b1_b2_and_100k() {
     let config = parse_args(args).unwrap();
     assert_eq!(config.scenario, "S2");
     assert_eq!(config.measured_frames, 100_000);
+}
+
+#[test]
+fn cli_accepts_s3_with_all_concurrencies() {
+    let mut args = valid_args().to_vec();
+    args[4] = "b0,b1,b2";
+    args[6] = "S3";
+    args[10] = "100000";
+    args.extend(["--concurrency", "1,2,4,8,16,32,64"]);
+    let config = parse_args(args).unwrap();
+    assert_eq!(config.scenario, "S3");
+    assert_eq!(config.concurrencies, vec![1, 2, 4, 8, 16, 32, 64]);
+}
+
+#[test]
+fn cli_rejects_s3_without_all_levels() {
+    let mut args = valid_args().to_vec();
+    args[6] = "S3";
+    args[10] = "100000";
+    args.extend(["--concurrency", "1,2,4,8,16,32,64"]);
+    assert_eq!(parse_args(args), Err(CliError::MissingValue));
+}
+
+#[test]
+fn cli_rejects_s3_duplicate_or_invalid_concurrency() {
+    for value in ["1,2,2,4,8,16,32,64", "1,3,4,8,16,32,64"] {
+        let mut args = valid_args().to_vec();
+        args[4] = "b0,b1,b2";
+        args[6] = "S3";
+        args[10] = "100000";
+        args.extend(["--concurrency", value]);
+        assert_eq!(parse_args(args), Err(CliError::MissingValue));
+    }
 }

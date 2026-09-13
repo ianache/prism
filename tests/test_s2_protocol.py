@@ -11,5 +11,11 @@ class S2ProtocolTests(unittest.TestCase):
         self.assertIn('100,000 measured frames per repetition', protocol)
         self.assertIn('S2', docs)
 
+    def test_documents_declare_s3_concurrency_100k(self):
+        docs = (ROOT / 'docs/rust-b0-b1.md').read_text(encoding='utf-8')
+        self.assertIn('S3', docs)
+        self.assertIn('1, 2, 4, 8, 16, 32, 64', docs)
+        self.assertIn('105', docs)
+
 if __name__ == '__main__':
     unittest.main()

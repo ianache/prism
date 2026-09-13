@@ -38,6 +38,7 @@ pub struct Config {
     pub max_warmup_frames: usize,
     pub measured_frames: usize,
     pub concurrency: usize,
+    pub concurrencies: Vec<usize>,
 }
 
 pub type CliConfig = Config;
@@ -59,7 +60,7 @@ where
     let mut samples = 100usize;
     let mut repetitions = 1usize;
     let mut output = "results/raw/s1.jsonl".to_owned();
-    let mut concurrency = 1usize;
+    let mut concurrencies = vec![1usize];
     let mut index = 1;
     while index < values.len() {
         let flag = values[index].as_str();
@@ -87,7 +88,12 @@ where
             "--samples" => samples = value.parse().map_err(|_| CliError::MissingValue)?,
             "--repetitions" => repetitions = value.parse().map_err(|_| CliError::MissingValue)?,
             "--output" => output = value,
-            "--concurrency" => concurrency = value.parse().map_err(|_| CliError::MissingValue)?,
+            "--concurrency" => {
+                concurrencies = value
+                    .split(',')
+                    .map(|item| item.parse().map_err(|_| CliError::MissingValue))
+                    .collect::<Result<Vec<usize>, CliError>>()?;
+            }
             _ => metadata[target.unwrap()] = Some(value),
         }
         index += 2;
@@ -95,7 +101,7 @@ where
     if dataset.is_none() || metadata.iter().any(Option::is_none) {
         return Err(CliError::MissingMetadata);
     }
-    if scenario != "S1" && scenario != "S2" {
+    if scenario != "S1" && scenario != "S2" && scenario != "S3" {
         return Err(CliError::InvalidScenario);
     }
     if levels.split(',').any(|level| !matches!(level, "b0" | "b1" | "b2")) {
@@ -109,10 +115,28 @@ where
         && levels.split(',').any(|level| level == "b2")) {
         return Err(CliError::MissingValue);
     }
-    if warmup == 0 || samples == 0 || repetitions == 0 || concurrency != 1 {
+    if warmup == 0 || samples == 0 || repetitions == 0 || concurrencies.is_empty() {
         return Err(CliError::MissingValue);
     }
     if warmup < 10_000 || samples < 10_000 || repetitions != 5 {
+        return Err(CliError::MissingValue);
+    }
+    let allowed_concurrencies = [1, 2, 4, 8, 16, 32, 64];
+    if concurrencies.iter().any(|value| !allowed_concurrencies.contains(value))
+        || concurrencies.iter().any(|value| concurrencies.iter().filter(|item| *item == value).count() > 1)
+    {
+        return Err(CliError::MissingValue);
+    }
+    if scenario != "S3" && concurrencies != [1] {
+        return Err(CliError::MissingValue);
+    }
+    if scenario == "S3"
+        && (levels.split(',').collect::<std::collections::BTreeSet<_>>()
+            != ["b0", "b1", "b2"].into_iter().collect())
+    {
+        return Err(CliError::MissingValue);
+    }
+    if scenario == "S3" && (samples != 100_000 || concurrencies != allowed_concurrencies) {
         return Err(CliError::MissingValue);
     }
     Ok(Config {
@@ -130,6 +154,7 @@ where
         convergence_threshold_percent: 5,
         max_warmup_frames: 1_000_000,
         measured_frames: samples,
-        concurrency,
+        concurrency: concurrencies[0],
+        concurrencies,
     })
 }

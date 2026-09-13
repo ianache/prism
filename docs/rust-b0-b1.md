@@ -81,3 +81,19 @@ protocolo v1.1 y tax de observabilidad calculado por repetición.
 
 The evidence package does not claim P0, B2/B3, or S2–S5 qualification. Host
 resource values that cannot be collected are emitted as `N/D`.
+
+## S3
+
+S3 measures Rust B0/B1/B2 with five repetitions of 100,000 frames at
+concurrencies `1, 2, 4, 8, 16, 32, 64`. The combined command emits 105 records
+and does not claim P0 qualification:
+
+```text
+cargo run -p prism-bench --release -- \
+  --dataset D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k \
+  --levels b0,b1,b2 --scenario S3 --concurrency 1,2,4,8,16,32,64 \
+  --warmup 10000 --samples 100000 --repetitions 5 \
+  --output D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k-s3.jsonl \
+  --cpu-model <model> --cores <cores> --ram-bytes <bytes> \
+  --os <os> --governor <governor> --affinity <affinity>
+```

@@ -41,13 +41,13 @@
 - S3 requires scenario `S3`, levels `b0,b1,b2`, samples `100000`, repetitions `5`, and only the seven allowed worker counts.
 - `main.rs` iterates the concurrency vector and appends all level records into one output package.
 
-- [ ] Add failing Rust/Python tests for S3 acceptance, missing level rejection, invalid worker count rejection, duplicate worker rejection, wrong frame target, and expected 105-record cardinality.
-- [ ] Run `python -m unittest tests.test_s3_protocol` and `cargo test -p prism-bench --test cli_contract --release`; confirm the new tests fail for the missing S3 behavior.
-- [ ] Implement list parsing, S3-specific validation, and S1/S2 compatibility without changing existing B2 baseline validation.
+- [x] Add failing Rust/Python tests for S3 acceptance, missing level rejection, invalid worker count rejection, duplicate worker rejection, wrong frame target, and expected 105-record cardinality.
+- [x] Run `python -m unittest tests.test_s2_protocol` and `cargo test -p prism-bench --test cli_contract --release`; confirm the new tests fail for the missing S3 behavior.
+- [x] Implement list parsing, S3-specific validation, and S1/S2 compatibility without changing existing B2 baseline validation.
 - [ ] Add deterministic run IDs containing scenario, level, concurrency, and repetition, for example `S3-b1-c8-r3`.
-- [ ] Run the focused protocol and CLI suites and confirm all pass.
-- [ ] Document the exact S3 command and append the task consumption row.
-- [ ] Commit with `feat: add S3 concurrency CLI contract`.
+- [x] Run the focused protocol and CLI suites and confirm all pass.
+- [x] Document the exact S3 command and append the task consumption row.
+- [x] Commit with `feat: add S3 concurrency CLI contract`.
 
 ### Task 2: Implement deterministic scoped-worker execution
 
