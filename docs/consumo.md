@@ -1,6 +1,8 @@
 # Registro de consumo
 
-| 2026-09-13 | rust-s10-operational-lifecycle | tarea 1: CLI y estados lifecycle | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Opciones sentinel/timeout y estados tipados implementados; contratos verdes. |
+| 2026-09-13 | rust-s11-secure-transport | plan y especificación S11 Secure Transport and Authentication | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Especificación aprobada y plan detallado creado; implementación pendiente. |
+
+ | 2026-09-13 | rust-s10-operational-lifecycle | tarea 1: CLI y estados lifecycle | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Opciones sentinel/timeout y estados tipados implementados; contratos verdes. |
 | 2026-09-13 | rust-s10-operational-lifecycle | tarea 2: readiness y señal de shutdown | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Watcher portable, `STARTING`, `READY`, `DRAINING` y `STOPPED` verificados. |
 | 2026-09-13 | rust-s10-operational-lifecycle | tarea 3: integración con pool TCP | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Drain, deadline y `SERVER_DRAINING` integrados; S9 preservado. |
 | 2026-09-13 | rust-s10-operational-lifecycle | tarea 4: pruebas de drain y timeout | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | 2 pruebas lifecycle correctas; regresiones S7–S9 verdes. |
