@@ -62,14 +62,14 @@
 - Add a private worker result containing worker ID, ordered frame samples, correctness counters, and B2 collector maps.
 - Reject `concurrency == 0`; reject values other than `1` for S1/S2 and the seven allowed values for S3.
 
-- [ ] Add failing tests for deterministic modulo partitioning, exactly one worker per partition, complete 100K frame coverage, worker-owned B1/B2 state, join failure propagation, and stable merged sample order.
-- [ ] Run `cargo test -p prism-bench --test runner_contract --release`; confirm the new concurrency tests fail before implementation.
-- [ ] Implement the worker function using `std::thread::scope`, `std::sync::Barrier`, and `std::thread::ScopedJoinHandle`; worker `w` processes only indexes where `index % concurrency == w`.
-- [ ] Start the synchronized wall-clock timer immediately around the barrier-coordinated processing phase and stop it after all joins; do not include dataset load, expected-output comparison, percentile calculation, or JSON writing.
-- [ ] Give each non-B0 worker its own `Pipeline`; give each B2 worker its own `Collector`; merge returned counters and evidence in worker ID order.
-- [ ] Preserve warm-up convergence, five repetitions, typed rejection counts, execution failures, and correctness mismatch abort behavior.
-- [ ] Run runner contracts plus the existing B0/B1/B2 runtime contracts and confirm all pass.
-- [ ] Append the task consumption row and commit with `feat: run deterministic S3 workers`.
+- [x] Add failing tests for deterministic modulo partitioning, exactly one worker per partition, complete 100K frame coverage, worker-owned B1/B2 state, join failure propagation, and stable merged sample order.
+- [x] Run `cargo test -p prism-bench --test runner_contract --release`; confirm the new concurrency tests fail before implementation.
+- [x] Implement the worker function using `std::thread::scope`, `std::sync::Barrier`, and `std::thread::ScopedJoinHandle`; worker `w` processes only indexes where `index % concurrency == w`.
+- [x] Start the synchronized wall-clock timer immediately around the barrier-coordinated processing phase and stop it after all joins; do not include dataset load, expected-output comparison, percentile calculation, or JSON writing.
+- [x] Give each non-B0 worker its own `Pipeline`; give each B2 worker its own `Collector`; merge returned counters and evidence in worker ID order.
+- [x] Preserve warm-up convergence, five repetitions, typed rejection counts, execution failures, and correctness mismatch abort behavior.
+- [x] Run runner contracts plus the existing B0/B1/B2 runtime contracts and confirm all pass.
+- [x] Append the task consumption row and commit with `feat: run deterministic S3 workers`.
 
 ### Task 3: Serialize S3 metrics and pair taxes by concurrency
 

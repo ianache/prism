@@ -42,3 +42,38 @@ fn runner_emits_five_repetitions_and_complete_metrics() {
     assert!(run.frames_per_sec > 0.0);
     assert!(run.mb_per_sec > 0.0);
 }
+
+fn parallel_config(concurrency: usize) -> RunConfig {
+    RunConfig {
+        warmup: 0,
+        samples: 16,
+        warmup_frames: 0,
+        convergence_window: 1_000,
+        convergence_threshold_percent: 5,
+        max_warmup_frames: 0,
+        measured_frames: 16,
+        repetitions: 1,
+        concurrency,
+    }
+}
+
+#[test]
+fn runner_processes_complete_frame_set_with_two_workers() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/p0-smoke");
+    let dataset = Dataset::load(&root).unwrap();
+    let run = run_level(Level::B1, &dataset, &parallel_config(2)).unwrap();
+    assert_eq!(run.repetitions[0].frames, 16);
+    assert_eq!(run.correctness_total, 16);
+    assert_eq!(run.correctness_matches, 16);
+    assert!(run.repetitions[0].frames_per_sec > 0.0);
+}
+
+#[test]
+fn b2_parallel_run_returns_complete_owned_filter_evidence() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/p0-smoke");
+    let dataset = Dataset::load(&root).unwrap();
+    let run = run_level(Level::B2, &dataset, &parallel_config(2)).unwrap();
+    assert_eq!(run.correctness_matches, 16);
+    assert_eq!(run.filter_invocations.len(), 6);
+    assert!(run.filter_invocations.values().sum::<usize>() >= 16);
+}
