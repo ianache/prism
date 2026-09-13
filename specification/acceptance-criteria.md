@@ -1,6 +1,11 @@
 # Telemetry Acceptance Criteria
 
-**Status:** Provisional P0/P1 gates frozen for the spike.
+**Status:** Provisional P0/P1 gates frozen for the spike; comparable decisions use the v1.1 100,000-frame baseline.
+
+Every B2 and later comparable decision uses 100,000 measured frames per
+repetition, five repetitions, and the frozen warm-up/convergence protocol.
+Existing 10,000-frame S1 records are historical evidence and are not
+reinterpreted as 100,000-frame decisions.
 
 All gates use the matched warmed runs and timer defined in benchmark-protocol.md. Correctness is a hard prerequisite: any oracle mismatch disqualifies performance qualification.
 

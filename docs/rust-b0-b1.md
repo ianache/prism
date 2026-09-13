@@ -15,6 +15,11 @@ cargo test --workspace --release
 
 ## S1
 
+The S1 records already produced with 10,000 measured frames are historical
+evidence. Starting with protocol v1.1 and B2, every comparable decision uses
+100,000 measured frames per repetition; a different target requires a new
+versioned protocol decision.
+
 El corpus se carga antes de medir. La salida JSONL se escribe una sola vez y
 se rechaza si ya existe:
 
