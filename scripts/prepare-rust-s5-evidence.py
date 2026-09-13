@@ -28,6 +28,7 @@ def main():
         "dataset_id": manifest["dataset_id"],
         "dataset_digest": digest,
         "scenario": "S5",
+        "increment": "S6-p99-root-cause-isolation",
         "protocol_version": "1.1",
         "samples": 100000,
         "repetitions": 5,

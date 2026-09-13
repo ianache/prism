@@ -124,6 +124,10 @@ disponible, corrección total, identidad del dataset y taxes emparejados por
 nivel, repetición y ventana. S5 no constituye calificación P0 ni implementa
 B3, colas, brokers o transporte.
 
+S6 reuses the S5 protocol shape and adds optional process/system CPU
+diagnostics outside the timed path. Its immutable output is identified as an
+S6 root-cause-isolation package and remains engineering evidence only.
+
 ## S3
 
 S3 measures Rust B0/B1/B2 with five repetitions of 100,000 frames at

@@ -27,6 +27,7 @@ class PreflightTests(unittest.TestCase):
             data = json.loads((root / "preflight.json").read_text(encoding="utf-8-sig"))
             self.assertEqual((data["samples"], data["repetitions"], data["duration_seconds"]), (100000, 5, 900))
             self.assertEqual(data["dataset_digest"], "a" * 64)
+            self.assertEqual(data["increment"], "S6-p99-root-cause-isolation")
 
     def test_rejects_existing_output(self):
         with tempfile.TemporaryDirectory() as directory:
