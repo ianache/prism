@@ -93,6 +93,20 @@ pub fn workflow_tax_for_repetition(
         .map_or(0.0, |(_, base_p99)| workflow_tax_percent(*base_p99, compared_p99))
 }
 
+pub fn workflow_tax_for_concurrency_repetition(
+    baselines: &[((usize, usize), u128)],
+    concurrency: usize,
+    repetition: usize,
+    compared_p99: u128,
+) -> f64 {
+    baselines
+        .iter()
+        .find(|((baseline_concurrency, baseline_repetition), _)| {
+            *baseline_concurrency == concurrency && *baseline_repetition == repetition
+        })
+        .map_or(0.0, |(_, base_p99)| workflow_tax_percent(*base_p99, compared_p99))
+}
+
 pub fn write_once_atomic(path: &Path, records: &[RawRecord]) -> Result<(), OutputError> {
     if path.exists() {
         return Err(OutputError::AlreadyExists);

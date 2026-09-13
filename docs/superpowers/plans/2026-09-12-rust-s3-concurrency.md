@@ -44,7 +44,7 @@
 - [x] Add failing Rust/Python tests for S3 acceptance, missing level rejection, invalid worker count rejection, duplicate worker rejection, wrong frame target, and expected 105-record cardinality.
 - [x] Run `python -m unittest tests.test_s2_protocol` and `cargo test -p prism-bench --test cli_contract --release`; confirm the new tests fail for the missing S3 behavior.
 - [x] Implement list parsing, S3-specific validation, and S1/S2 compatibility without changing existing B2 baseline validation.
-- [ ] Add deterministic run IDs containing scenario, level, concurrency, and repetition, for example `S3-b1-c8-r3`.
+- [x] Add deterministic run IDs containing scenario, level, concurrency, and repetition, for example `S3-b1-c8-r3`.
 - [x] Run the focused protocol and CLI suites and confirm all pass.
 - [x] Document the exact S3 command and append the task consumption row.
 - [x] Commit with `feat: add S3 concurrency CLI contract`.
@@ -85,13 +85,13 @@
 - `workflow_tax_for_repetition` gains a concurrency-aware variant that returns the tax for the exact `(concurrency, repetition)` key and returns `0.0` only for B0.
 - S3 throughput uses the worker-group elapsed interval; latency percentiles use the merged per-frame samples.
 
-- [ ] Add failing output tests that parse JSON and assert scenario S3, concurrency, run ID, all five repetitions, finite throughput, and every required B2 map key F1–F6.
-- [ ] Add failing tax tests proving B1 uses the matching B0 p99 at the same concurrency and repetition, while B2 uses matching B1 values.
-- [ ] Run the focused output and benchmark contracts and record expected failures.
-- [ ] Implement the keyed baseline maps and use them when building 105 `RawRecord` values.
-- [ ] Preserve negative workflow and observability tax values and deterministic BTreeMap JSON key ordering.
-- [ ] Run focused output/benchmark suites and all existing contracts.
-- [ ] Append the task consumption row and commit with `feat: serialize matched S3 metrics`.
+- [x] Add failing output tests that parse JSON and assert scenario S3, concurrency, run ID, all five repetitions, finite throughput, and every required B2 map key F1–F6.
+- [x] Add failing tax tests proving B1 uses the matching B0 p99 at the same concurrency and repetition, while B2 uses matching B1 values.
+- [x] Run the focused output and benchmark contracts and record expected failures.
+- [x] Implement the keyed baseline maps and use them when building 105 `RawRecord` values.
+- [x] Preserve negative workflow and observability tax values and deterministic BTreeMap JSON key ordering.
+- [x] Run focused output/benchmark suites and all existing contracts.
+- [x] Append the task consumption row and commit with `feat: serialize matched S3 metrics`.
 
 ### Task 4: Build the independent S3 audit
 

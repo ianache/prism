@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 use std::fs;
 
 use prism_bench::output::{
-    workflow_tax_for_repetition, workflow_tax_percent, write_once_atomic, OutputError, RawRecord,
+    workflow_tax_for_concurrency_repetition, workflow_tax_for_repetition, workflow_tax_percent,
+    write_once_atomic, OutputError, RawRecord,
 };
 
 fn record() -> RawRecord {
@@ -66,6 +67,13 @@ fn workflow_tax_uses_the_matching_baseline_repetition() {
 }
 
 #[test]
+fn workflow_tax_uses_matching_concurrency_and_repetition() {
+    let baselines = [((1, 1), 100), ((8, 1), 200), ((8, 2), 300)];
+    assert_eq!(workflow_tax_for_concurrency_repetition(&baselines, 8, 2, 330), 10.0);
+    assert_eq!(workflow_tax_for_concurrency_repetition(&baselines, 1, 1, 120), 20.0);
+}
+
+#[test]
 fn raw_record_serializes_required_metrics() {
     let json = record().to_json();
     for key in [
@@ -95,6 +103,18 @@ fn raw_record_serializes_required_metrics() {
     ] {
         assert!(json.contains(&format!("\"{key}\"")), "missing {key}");
     }
+}
+
+#[test]
+fn raw_record_serializes_s3_identity_fields() {
+    let mut s3 = record();
+    s3.scenario = "S3".into();
+    s3.concurrency = 8;
+    s3.run_id = "S3-b2-c8-r3".into();
+    let json = s3.to_json();
+    assert!(json.contains("\"scenario\":\"S3\""));
+    assert!(json.contains("\"concurrency\":8"));
+    assert!(json.contains("\"run_id\":\"S3-b2-c8-r3\""));
 }
 
 #[test]
