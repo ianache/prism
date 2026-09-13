@@ -46,3 +46,4 @@
 | 2026-09-12 | rust-s2-throughput-100k | tarea 4: ejecución externa S2 100K | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | B0/B1/B2 ejecutados juntos sobre corpus externo; 15 registros y 100.000 frames por repetición. |
 | 2026-09-12 | rust-s2-throughput-100k | tarea 5: verificación final S2 | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | Auditoría `ok rows=15 levels=b0,b1,b2 frames=100000`; suite Rust y Python verdes. |
 | 2026-09-12 | rust-s2-throughput-100k | plan completo: S2 Throughput 100K | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | Tareas 1–5 completadas; no se reclama calificación P0 ni se incluyen S3–S5, concurrencia, brokers o runtimes adicionales. |
+| 2026-09-12 | rust-s3-concurrency | plan y especificación S3 Concurrency | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | Especificación aprobada y plan creado; implementación pendiente; medición de tiempo y tokens no disponible. |
