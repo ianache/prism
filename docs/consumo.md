@@ -1,5 +1,7 @@
 # Registro de consumo
 
+| 2026-09-13 | rust-s7-production-vertical-slice | plan y especificación S7 Production Vertical Slice | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Diseño aprobado; contrato JSONL refinado a `request_id` + `payload_hex`; plan detallado creado; implementación pendiente. |
+
  | 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 1: contratos de telemetría CPU y serialización | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 7 contratos runner/output correctos; commit e8adb65. |
 | 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 2: auditoría y reporte diagnóstico | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 6 pruebas focalizadas correctas; commit d9133e9. |
 | 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 3: ejecución externa S6 100K | COMPLETADO | 2026-09-13 13:19:04 | 2026-09-13 13:34:00 | 900 | N/D | N/D | N/D | reloj del proceso | 549 ventanas, código 0, raw SHA-256 e7c8be55...; preflight y digest vinculados. |

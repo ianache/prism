@@ -13,7 +13,7 @@ writes one JSONL result per input line to `stdout`.
 ## Current boundary
 
 `prism-runtime` already implements frame decoding, frozen rule precedence, B0,
-B1, and B2 observed processing. `prism-bench` drives those components with
+and B1 with an observer hook. B2 is the observed B1 route; `prism-bench` drives those components with
 static datasets and measures them, but it is not a live ingress/egress flow.
 S7 adds an operational adapter without changing the runtime semantics or the
 S5/S6 measurement paths.
@@ -22,10 +22,13 @@ S5/S6 measurement paths.
 
 The first production slice uses line-delimited JSON because it is inspectable,
 scriptable, and does not introduce a network dependency. Each input line is a
-complete protocol frame encoded as JSON with the existing model fields. Each
-output line contains the normalized outcome, route, rejection context, and a
-stable request identifier. Blank input lines are rejected with a structured
-error result rather than silently skipped.
+small envelope with `request_id` and `payload_hex`; `payload_hex` contains the
+canonical binary protocol frame already consumed by `prism-runtime`. This
+keeps JSONL as the operational boundary without duplicating a JSON-to-model
+codec or weakening the existing binary validation contract. Each output line
+contains the normalized outcome, route, rejection context, and a stable
+request identifier. Blank input lines are rejected with a structured error
+result rather than silently skipped.
 
 The command accepts an explicit route (`b0`, `b1`, or `b2`), reads until EOF,
 flushes each result, returns exit code 0 when all lines are processed, and
@@ -35,12 +38,13 @@ represented in-band and does not terminate the stream.
 
 ## Architecture and data flow
 
-`stdin` → line reader → JSON/frame decoder → selected runtime route → result
-serializer → `stdout`. The adapter owns buffering, request IDs, structured
-errors, and flushing. `prism-runtime` owns protocol validation, filter
-precedence, classification, and normalized outcome semantics. No benchmark
-timer, p99 metric, workflow tax, broker, queue, or transport abstraction is
-added to the live path.
+`stdin` → line reader → JSONL envelope parser → hex decoder → selected runtime
+route → result serializer → `stdout`. The adapter owns buffering, request IDs,
+structured errors, and flushing. `prism-runtime` owns protocol validation,
+filter precedence, classification, observation semantics, and normalized
+outcomes. B0 calls the direct route, B1 calls the pipeline, and B2 calls the
+same pipeline with a local observer. No benchmark timer, p99 metric, workflow
+tax, broker, queue, or transport abstraction is added to the live path.
 
 ## CLI and lifecycle
 
