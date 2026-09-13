@@ -105,11 +105,11 @@
 - The audit requires exactly one `(level, concurrency, repetition)` tuple for all 105 combinations.
 - It validates dataset ID/digest, protocol, frame target, correctness, finite nonnegative throughput/latency metrics, F1–F6 evidence, and keyed tax arithmetic.
 
-- [ ] Create valid temporary fixtures and invalid cases for missing tuple, duplicate tuple, invalid concurrency, wrong scenario, wrong frame count, digest mismatch, correctness mismatch, non-finite metric, incomplete F1–F6 evidence, wrong workflow tax, and wrong observability tax.
-- [ ] Run `python -m unittest scripts.test_audit_rust_s3` and confirm the new tests fail before implementation.
-- [ ] Implement standard-library JSONL parsing, manifest identity checks, tuple cardinality checks, and `(concurrency, repetition)` p99 tax calculations.
-- [ ] Run S3 audit tests together with S1 and S2 audit suites.
-- [ ] Document the audit command, append the task consumption row, and commit with `test: audit S3 concurrency evidence`.
+- [x] Create valid temporary fixtures and invalid cases for missing tuple, duplicate tuple, invalid concurrency, wrong scenario, wrong frame count, digest mismatch, correctness mismatch, non-finite metric, incomplete F1–F6 evidence, wrong workflow tax, and wrong observability tax.
+- [x] Run `python -m unittest scripts.test_audit_rust_s3` and confirm the new tests fail before implementation.
+- [x] Implement standard-library JSONL parsing, manifest identity checks, tuple cardinality checks, and `(concurrency, repetition)` p99 tax calculations.
+- [x] Run S3 audit tests together with S1 and S2 audit suites.
+- [x] Document the audit command, append the task consumption row, and commit with `test: audit S3 concurrency evidence`.
 
 ### Task 5: Execute, verify, and publish the S3 evidence package
 
