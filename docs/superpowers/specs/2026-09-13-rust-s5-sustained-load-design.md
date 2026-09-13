@@ -15,8 +15,9 @@ a P0 runtime by itself.
 
 - Use protocol v1.1 and exactly 100,000 measured frames in every complete
   decision window.
-- Use five repetitions for every level. Each repetition receives an equal
-  share of a 900-second total sustained-load budget (180 seconds minimum).
+- Use five repetitions for every level. The complete B0/B1/B2 run receives a
+  900-second total sustained-load budget, divided equally across three levels
+  and five repetitions (60 seconds per level/repetition).
 - Keep B0, B1, B2 behavior, F1-F6 order, oracle comparison, and existing S1-S4
   contracts unchanged.
 - Use the same resident external 100K corpus for every level and repetition.

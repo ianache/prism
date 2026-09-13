@@ -5,14 +5,13 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts" / "prepare-rust-s5-evidence.ps1"
+SCRIPT = ROOT / "scripts" / "prepare-rust-s5-evidence.py"
 
 
 class PreflightTests(unittest.TestCase):
     def run_script(self, dataset, raw, manifest):
         return subprocess.run(
-            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SCRIPT),
-             "-Dataset", str(dataset), "-RawOutput", str(raw), "-ManifestOutput", str(manifest)],
+            ["python", str(SCRIPT), "--dataset", str(dataset), "--raw-output", str(raw), "--manifest-output", str(manifest)],
             capture_output=True, text=True,
         )
 

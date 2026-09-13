@@ -12,7 +12,8 @@ use prism_bench::runner::{run_level, run_phase, Level, PhaseRun, RawRun, RunConf
 use prism_bench::sustained::{run_sustained, SustainedConfig, SustainedWindow};
 
 fn run_s5(config: &prism_bench::cli::Config, dataset: &Dataset) {
-    let sustained_config = SustainedConfig { duration_seconds: config.duration_seconds, window_frames: config.measured_frames, repetitions: config.repetitions };
+    let per_level_duration = config.duration_seconds / 3;
+    let sustained_config = SustainedConfig { duration_seconds: per_level_duration, window_frames: config.measured_frames, repetitions: config.repetitions };
     let host = Metadata::collect(config);
     let mut metadata = BTreeMap::new();
     metadata.insert("cpu_model".into(), host.cpu_model.clone()); metadata.insert("physical_cores".into(), host.physical_cores.clone());
