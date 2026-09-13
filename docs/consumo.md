@@ -1,6 +1,13 @@
 # Registro de consumo
 
-| 2026-09-13 | rust-s8-local-tcp-transport | plan y especificación S8 Local TCP Transport | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Especificación aprobada y plan detallado creado; implementación pendiente. |
+| 2026-09-13 | rust-s8-local-tcp-transport | tarea 1: CLI y frontera compartida | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | `--listen` y `process_line` compartido implementados; contratos CLI verdes. |
+| 2026-09-13 | rust-s8-local-tcp-transport | tarea 2: transporte TCP acotado | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Listener loopback serial, conexiones persistentes y límite 64 KiB implementados. |
+| 2026-09-13 | rust-s8-local-tcp-transport | tarea 3: integración TCP con S7 | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | E2E B0/B1/B2, errores en banda y reconexión verificados. |
+| 2026-09-13 | rust-s8-local-tcp-transport | tarea 4: lifecycle y no regresión | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | EOF, segunda conexión, oversized line y S7 stdin/stdout cubiertos. |
+| 2026-09-13 | rust-s8-local-tcp-transport | tarea 5: auditoría y evidencia final | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | 57 Rust + 39 Python verdes; evidencia documentada; sin claim P0. |
+| 2026-09-13 | rust-s8-local-tcp-transport | plan completo: Rust S8 Local TCP Transport | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Transporte TCP local integrado y verificado; límites de alcance explícitos. |
+
+ | 2026-09-13 | rust-s8-local-tcp-transport | plan y especificación S8 Local TCP Transport | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Especificación aprobada y plan detallado creado; implementación pendiente. |
 
  | 2026-09-13 | rust-s7-production-vertical-slice | plan y especificación S7 Production Vertical Slice | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Diseño aprobado; contrato JSONL refinado a `request_id` + `payload_hex`; plan detallado creado; implementación pendiente. |
 | 2026-09-13 | rust-s7-production-vertical-slice | tarea 1: crate runner y contrato CLI | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Rutas B0/B1/B2, argumentos y ayuda implementados; contratos focalizados verdes. |

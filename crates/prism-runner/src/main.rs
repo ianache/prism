@@ -1,6 +1,7 @@
 use std::io::{self, BufRead, Write};
+use std::net::TcpListener;
 
-use prism_runner::{dispatch, output, parse_args, protocol, usage, CliError};
+use prism_runner::{parse_args, transport, usage, CliError};
 
 fn main() {
     let args = match parse_args(std::env::args()) {
@@ -14,10 +15,30 @@ fn main() {
             std::process::exit(2);
         }
     };
+    if let Some(address) = args.listen.as_deref() {
+        let address = match transport::parse_listen(address) {
+            Ok(address) => address,
+            Err(error) => {
+                eprintln!("listen address invalid: {error}");
+                std::process::exit(2);
+            }
+        };
+        let listener = match TcpListener::bind(address) {
+            Ok(listener) => listener,
+            Err(error) => {
+                eprintln!("listen failed: {error}");
+                std::process::exit(2);
+            }
+        };
+        if let Err(error) = transport::serve(listener, args.route, &args.request_id_prefix, 0) {
+            eprintln!("transport failed: {error}");
+            std::process::exit(2);
+        }
+        return;
+    }
     let stdin = io::stdin();
     let mut stdout = io::BufWriter::new(io::stdout().lock());
     for (index, line) in stdin.lock().lines().enumerate() {
-        let fallback_id = format!("{}-{}", args.request_id_prefix, index + 1);
         let line = match line {
             Ok(line) => line,
             Err(error) => {
@@ -25,38 +46,10 @@ fn main() {
                 std::process::exit(2);
             }
         };
-        let envelope = match protocol::parse_line(&line) {
-            Ok(envelope) => envelope,
-            Err(error) => {
-                write_line(
-                    &mut stdout,
-                    &output::error(
-                        &fallback_id,
-                        args.route.as_str(),
-                        error.code,
-                        &error.message,
-                    ),
-                );
-                continue;
-            }
-        };
-        let request_id = if envelope.request_id.is_empty() {
-            fallback_id
-        } else {
-            format!("{}-{}", args.request_id_prefix, envelope.request_id)
-        };
-        let result = match dispatch::run(args.route, &envelope.payload) {
-            Ok((outcome, stats)) => {
-                output::success(&request_id, args.route.as_str(), &outcome, &stats)
-            }
-            Err(message) => output::error(
-                &request_id,
-                args.route.as_str(),
-                "RUNTIME_FAILURE",
-                &message,
-            ),
-        };
-        write_line(&mut stdout, &result);
+        write_line(
+            &mut stdout,
+            &prism_runner::process_line(args.route, &args.request_id_prefix, index + 1, &line),
+        );
     }
     if stdout.flush().is_err() {
         std::process::exit(2);

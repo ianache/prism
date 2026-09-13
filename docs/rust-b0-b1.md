@@ -159,3 +159,16 @@ se informan en banda y no detienen las siguientes; EOF termina correctamente.
 Las rutas son B0 (directa), B1 (pipeline) y B2 (pipeline con observer F1–F6).
 Este slice es local y funcional: no implica transporte de red, broker, métricas
 de benchmark, calificación P0 ni reinterpreta la evidencia S5/S6.
+
+## S8: transporte TCP local
+
+Para probar el mismo flujo sobre TCP, inicia el listener en loopback:
+
+```powershell
+rtk proxy .\target\release\prism-run.exe --route b2 --listen 127.0.0.1:9000 --request-id-prefix tcp
+```
+
+Envía las mismas líneas JSONL desde un cliente TCP. El proceso anuncia la
+dirección efectiva por stderr (`LISTENING ...`), procesa varias solicitudes por
+conexión y acepta otra conexión después de un EOF limpio. Las líneas mayores de
+64 KiB cierran solo la conexión actual.

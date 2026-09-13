@@ -27,6 +27,7 @@ impl Route {
 pub struct Args {
     pub route: Route,
     pub request_id_prefix: String,
+    pub listen: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,6 +47,7 @@ where
     let mut iter = args.into_iter().map(Into::into).skip(1);
     let mut route = None;
     let mut prefix = String::from("req");
+    let mut listen = None;
     while let Some(arg) = iter.next() {
         match arg.as_str() {
             "--help" | "-h" => return Err(CliError::Help),
@@ -61,6 +63,12 @@ where
                     .next()
                     .ok_or_else(|| CliError::MissingValue(arg.clone()))?
             }
+            "--listen" => {
+                listen = Some(
+                    iter.next()
+                        .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
+                )
+            }
             _ if arg.starts_with("--") => return Err(CliError::UnknownArgument(arg)),
             _ => return Err(CliError::UnknownArgument(arg)),
         }
@@ -68,9 +76,10 @@ where
     Ok(Args {
         route: route.ok_or(CliError::MissingRoute)?,
         request_id_prefix: prefix,
+        listen,
     })
 }
 
 pub fn usage() -> &'static str {
-    "usage: prism-run --route <b0|b1|b2> [--request-id-prefix <prefix>]"
+    "usage: prism-run --route <b0|b1|b2> [--request-id-prefix <prefix>] [--listen <host:port>]"
 }
