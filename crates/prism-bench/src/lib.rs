@@ -5,4 +5,5 @@ pub mod metadata;
 pub mod output;
 pub mod percentiles;
 pub mod runner;
+pub mod sustained;
 pub mod sha256;

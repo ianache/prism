@@ -25,6 +25,9 @@ pub struct RawRecord {
     pub lateness_p95_ns: u128, pub lateness_p99_ns: u128,
     pub calibration_median_frames_per_sec: f64, pub baseline_frames_per_sec: f64,
     pub burst_frames_per_sec: f64,
+    pub window_index: usize, pub duration_seconds: f64,
+    pub rss_before_bytes: Option<u64>, pub rss_after_bytes: Option<u64>,
+    pub incomplete_tail_frames: usize,
 }
 
 fn escape(value: &str) -> String { value.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n") }
@@ -35,7 +38,7 @@ fn map_usize(map: &BTreeMap<String, usize>) -> String { map.iter().map(|(k,v)| f
 impl RawRecord {
     pub fn to_json(&self) -> String {
         format!(
-            "{{\"command\":\"{}\",\"concurrency\":{},\"correctness_matches\":{},\"correctness_total\":{},\"converged\":{},\"convergence_threshold_percent\":{},\"convergence_window\":{},\"dataset_digest\":\"{}\",\"dataset_id\":\"{}\",\"edge_complex_count\":{},\"execution_failures\":{},\"fixture_count\":{},\"frames_per_sec\":{},\"implementation\":\"{}\",\"invalid_count\":{},\"level\":\"{}\",\"max_ns\":{},\"mb_per_sec\":{},\"measured_frames\":{},\"metadata\":{{{}}},\"observability_tax_percent\":{},\"observability_variant\":\"{}\",\"execution_id\":\"{}\",\"filter_timings_ns\":{{{}}},\"filter_invocations\":{{{}}},\"filter_rejections\":{{{}}},\"filter_execution_failures\":{{{}}},\"protocol_version\":\"{}\",\"p50_ns\":{},\"p95_ns\":{},\"p99_9_ns\":{},\"p99_ns\":{},\"payload_class_105\":{},\"payload_class_249\":{},\"payload_class_501\":{},\"repetition\":{},\"run_id\":\"{}\",\"scenario\":\"{}\",\"timestamp_utc\":\"{}\",\"typed_rejections\":{},\"valid_count\":{},\"warmup_frames\":{},\"warmup_target\":{},\"workflow_tax_percent\":{},\"phase\":\"{}\",\"offered_frames_per_sec\":{},\"processed_frames_per_sec\":{},\"late_frames\":{},\"on_time_frames\":{},\"lateness_p50_ns\":{},\"lateness_p95_ns\":{},\"lateness_p99_ns\":{},\"calibration_median_frames_per_sec\":{},\"baseline_frames_per_sec\":{},\"burst_frames_per_sec\":{}}}",
+            "{{\"command\":\"{}\",\"concurrency\":{},\"correctness_matches\":{},\"correctness_total\":{},\"converged\":{},\"convergence_threshold_percent\":{},\"convergence_window\":{},\"dataset_digest\":\"{}\",\"dataset_id\":\"{}\",\"edge_complex_count\":{},\"execution_failures\":{},\"fixture_count\":{},\"frames_per_sec\":{},\"implementation\":\"{}\",\"invalid_count\":{},\"level\":\"{}\",\"max_ns\":{},\"mb_per_sec\":{},\"measured_frames\":{},\"metadata\":{{{}}},\"observability_tax_percent\":{},\"observability_variant\":\"{}\",\"execution_id\":\"{}\",\"filter_timings_ns\":{{{}}},\"filter_invocations\":{{{}}},\"filter_rejections\":{{{}}},\"filter_execution_failures\":{{{}}},\"protocol_version\":\"{}\",\"p50_ns\":{},\"p95_ns\":{},\"p99_9_ns\":{},\"p99_ns\":{},\"payload_class_105\":{},\"payload_class_249\":{},\"payload_class_501\":{},\"repetition\":{},\"run_id\":\"{}\",\"scenario\":\"{}\",\"timestamp_utc\":\"{}\",\"typed_rejections\":{},\"valid_count\":{},\"warmup_frames\":{},\"warmup_target\":{},\"workflow_tax_percent\":{},\"phase\":\"{}\",\"offered_frames_per_sec\":{},\"processed_frames_per_sec\":{},\"late_frames\":{},\"on_time_frames\":{},\"lateness_p50_ns\":{},\"lateness_p95_ns\":{},\"lateness_p99_ns\":{},\"calibration_median_frames_per_sec\":{},\"baseline_frames_per_sec\":{},\"burst_frames_per_sec\":{},\"window_index\":{},\"duration_seconds\":{},\"rss_before_bytes\":{},\"rss_after_bytes\":{},\"incomplete_tail_frames\":{}}}",
             escape(&self.command), self.concurrency, self.correctness_matches, self.correctness_total, self.converged,
             self.convergence_threshold_percent, self.convergence_window, escape(&self.dataset_digest), escape(&self.dataset_id),
             self.edge_complex_count, self.execution_failures, self.fixture_count, self.frames_per_sec, escape(&self.implementation),
@@ -47,7 +50,9 @@ impl RawRecord {
             escape(&self.timestamp_utc), self.typed_rejections, self.valid_count, self.warmup_frames, self.warmup_target,
             self.workflow_tax_percent, escape(&self.phase), self.offered_frames_per_sec, self.processed_frames_per_sec,
             self.late_frames, self.on_time_frames, self.lateness_p50_ns, self.lateness_p95_ns, self.lateness_p99_ns,
-            self.calibration_median_frames_per_sec, self.baseline_frames_per_sec, self.burst_frames_per_sec)
+            self.calibration_median_frames_per_sec, self.baseline_frames_per_sec, self.burst_frames_per_sec,
+            self.window_index, self.duration_seconds, self.rss_before_bytes.map_or("\"N/D\"".to_owned(), |v| v.to_string()),
+            self.rss_after_bytes.map_or("\"N/D\"".to_owned(), |v| v.to_string()), self.incomplete_tail_frames)
     }
 }
 
