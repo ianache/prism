@@ -66,7 +66,7 @@ fn main() {
     metadata.insert("container_limits".to_owned(), host.container_limits);
     metadata.insert("affinity".to_owned(), host.affinity);
     metadata.insert("commit".to_owned(), host.commit);
-    metadata.insert("command".to_owned(), host.command);
+    metadata.insert("command".to_owned(), host.command.clone());
     metadata.insert("run_id".to_owned(), host.run_id);
     let mut records = Vec::new();
     for (level, run) in runs {
@@ -87,6 +87,24 @@ fn main() {
                 mb_per_sec: repetition.mb_per_sec,
                 correctness_total: run.correctness_total,
                 correctness_matches: run.correctness_matches,
+                timestamp_utc: host.timestamp_utc.clone(),
+                dataset_id: dataset.dataset_id.clone(),
+                fixture_count: dataset.fixture_count,
+                payload_class_105: dataset.payload_counts.class_105,
+                payload_class_249: dataset.payload_counts.class_249,
+                payload_class_501: dataset.payload_counts.class_501,
+                valid_count: dataset.validity_counts.valid,
+                invalid_count: dataset.validity_counts.invalid,
+                edge_complex_count: dataset.validity_counts.edge_complex,
+                warmup_target: run.warmup_target,
+                warmup_frames: run.warmup_frames,
+                convergence_window: run.convergence_window,
+                convergence_threshold_percent: run.convergence_threshold_percent,
+                converged: run.converged,
+                measured_frames: run.measured_frames,
+                typed_rejections: run.typed_rejections,
+                execution_failures: run.execution_failures,
+                command: host.command.clone(),
                 dataset_digest: dataset.manifest_digest.clone(),
                 workflow_tax_percent: if level == "b0" {
                     0.0

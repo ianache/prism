@@ -46,6 +46,8 @@ fn valid_s1_config_contains_protocol_parameters() {
     assert_eq!(metadata.cpu_model, "cpu");
     assert_eq!(metadata.runtime, "rust");
     assert_eq!(metadata.container_limits, "N/D");
+    assert_ne!(metadata.command, "N/D");
+    assert!(!metadata.timestamp_utc.is_empty());
 }
 
 #[test]

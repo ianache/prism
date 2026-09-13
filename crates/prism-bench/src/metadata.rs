@@ -24,6 +24,7 @@ pub struct Metadata {
     pub commit: String,
     pub command: String,
     pub run_id: String,
+    pub timestamp_utc: String,
 }
 
 impl Metadata {
@@ -41,8 +42,15 @@ impl Metadata {
             container_limits: "N/D".to_owned(),
             affinity: config.metadata[5].clone(),
             commit: "N/D".to_owned(),
-            command: "N/D".to_owned(),
+            command: config.command.clone(),
             run_id: "N/D".to_owned(),
+            timestamp_utc: format!(
+                "unix:{}",
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|duration| duration.as_secs())
+                    .unwrap_or(0)
+            ),
         }
     }
 }
