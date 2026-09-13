@@ -1,7 +1,9 @@
 use std::collections::BTreeMap;
 use std::fs;
 
-use prism_bench::output::{workflow_tax_percent, write_once_atomic, OutputError, RawRecord};
+use prism_bench::output::{
+    workflow_tax_for_repetition, workflow_tax_percent, write_once_atomic, OutputError, RawRecord,
+};
 
 fn record() -> RawRecord {
     RawRecord {
@@ -47,6 +49,12 @@ fn record() -> RawRecord {
 #[test]
 fn workflow_tax_retains_negative_values() {
     assert_eq!(workflow_tax_percent(100, 90), -10.0);
+}
+
+#[test]
+fn workflow_tax_uses_the_matching_baseline_repetition() {
+    let baselines = [(1, 100), (2, 200)];
+    assert_eq!(workflow_tax_for_repetition(&baselines, 2, 220), 10.0);
 }
 
 #[test]

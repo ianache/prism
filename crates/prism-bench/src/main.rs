@@ -3,7 +3,9 @@ use std::collections::BTreeMap;
 use prism_bench::cli::parse_args;
 use prism_bench::dataset::Dataset;
 use prism_bench::metadata::Metadata;
-use prism_bench::output::{workflow_tax_percent, write_once_atomic, RawRecord};
+use prism_bench::output::{
+    workflow_tax_for_repetition, write_once_atomic, RawRecord,
+};
 use prism_bench::runner::{run_level, Level, RawRun, RunConfig};
 
 fn main() {
@@ -47,11 +49,16 @@ fn main() {
             }
         }
     }
-    let b0_p99 = runs
+    let b0_p99_by_repetition = runs
         .iter()
         .find(|(level, _)| level == "b0")
-        .map(|(_, run)| run.p99_ns)
-        .unwrap_or(0);
+        .map(|(_, run)| {
+            run.repetitions
+                .iter()
+                .map(|repetition| (repetition.repetition, repetition.p99_ns))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     let host = Metadata::collect(&config);
     let mut metadata = BTreeMap::new();
     metadata.insert("cpu_model".to_owned(), host.cpu_model);
@@ -109,7 +116,11 @@ fn main() {
                 workflow_tax_percent: if level == "b0" {
                     0.0
                 } else {
-                    workflow_tax_percent(b0_p99, repetition.p99_ns)
+                    workflow_tax_for_repetition(
+                        &b0_p99_by_repetition,
+                        repetition.repetition,
+                        repetition.p99_ns,
+                    )
                 },
                 metadata: metadata.clone(),
             });

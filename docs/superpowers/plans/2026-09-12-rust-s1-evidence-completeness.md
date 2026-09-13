@@ -31,11 +31,11 @@
 - `Dataset` exposes `dataset_id`, `fixture_count`, `payload_counts`, and `validity_counts`.
 - `RawRun` exposes warm-up target/actual frames, convergence window/result, measured frames, typed rejection count, execution-failure count, and correctness totals.
 
-- [ ] Write tests that assert smoke dataset identity/counts and that a run exposes protocol evidence with five repetitions.
-- [ ] Run `cargo test -p prism-bench --test dataset_contract --release` and `cargo test -p prism-bench --test runner_contract --release`; confirm the new field assertions fail.
-- [ ] Implement the smallest typed fields and propagate manifest counts and runner evidence without changing execution semantics.
-- [ ] Re-run both focused suites and assert all new values are internally consistent.
-- [ ] Append the task consumption row and commit with `feat: expose complete S1 run evidence`.
+- [x] Write tests that assert smoke dataset identity/counts and that a run exposes protocol evidence with five repetitions.
+- [x] Run the focused dataset and runner suites and confirm the new field assertions fail before implementation.
+- [x] Implement the smallest typed fields and propagate manifest counts and runner evidence without changing execution semantics.
+- [x] Re-run both focused suites and assert all new values are internally consistent.
+- [x] Append the task consumption row and commit with `feat: expose complete S1 run evidence`.
 
 ### Task 2: Complete raw record and invocation metadata
 
@@ -50,11 +50,11 @@
 - `RawRecord` serializes dataset identity/counts, UTC timestamp, exact command, protocol parameters, convergence evidence, per-repetition samples, correctness/failure counts, and required metadata.
 - `Metadata::collect` accepts the parsed invocation context and emits `N/D` for unavailable host values.
 
-- [ ] Add failing JSON assertions for every required field and a CLI test proving the exact command and run identity are captured.
-- [ ] Run the focused output and CLI tests to establish the missing-field failures.
-- [ ] Implement deterministic serialization using the existing ordered maps and preserve write-once atomic output.
-- [ ] Run focused tests plus a 300-fixture CLI smoke command writing to an external temporary JSONL path; parse every line with Python `json.loads`.
-- [ ] Append the task consumption row and commit with `feat: emit self-describing S1 raw records`.
+- [x] Add failing JSON assertions for every required field and a CLI test proving the exact command and run identity are captured.
+- [x] Run the focused output and CLI tests to establish the missing-field failures.
+- [x] Implement deterministic serialization using the existing ordered maps and preserve write-once atomic output.
+- [x] Run focused tests plus a 300-fixture CLI smoke command writing to an external temporary JSONL path; parse every line with Python `json.loads`.
+- [x] Append the task consumption row and commit with `feat: emit self-describing S1 raw records`.
 
 ### Task 3: Harden the independent S1 audit
 
@@ -67,12 +67,12 @@
 - `audit-rust-s1.py` validates required keys, exact B0/B1 repetition cardinality, digest and dataset identity, counts, finite numeric metrics, correctness, convergence, and tax arithmetic.
 - The audit exits nonzero with a field-specific error for each invalid invariant.
 
-- [ ] Create compact in-memory/temp-directory audit fixtures for valid data, missing metadata, digest mismatch, wrong repetitions, correctness mismatch, non-finite metric, failed convergence, and incorrect tax.
-- [ ] Run `python -m pytest scripts/test_audit_rust_s1.py` and confirm the new invalid cases fail before implementation.
-- [ ] Implement explicit validators using only Python standard-library modules and retain the successful 100K audit path.
-- [ ] Run the audit test file, the smoke audit, and the external 100K audit; expect valid output only for the complete records.
-- [ ] Update the documentation with the exact audit command and append the task consumption row.
-- [ ] Commit with `test: enforce complete S1 evidence audit`.
+- [x] Create compact in-memory/temp-directory audit fixtures for valid data, missing metadata, digest mismatch, wrong repetitions, correctness mismatch, non-finite metric, failed convergence, and incorrect tax.
+- [x] Run the audit contract suite and confirm invalid cases fail before implementation.
+- [x] Implement explicit validators using only Python standard-library modules and retain the successful 100K audit path.
+- [x] Run the audit test file and external 100K audit; expect valid output only for the complete records.
+- [x] Update the documentation with the exact audit command and append the task consumption row.
+- [x] Commit with `test: enforce complete S1 evidence audit`.
 
 ### Task 4: Final verification and review package
 
@@ -82,12 +82,12 @@
 - Modify: `docs/rust-b0-b1.md`
 - Modify: `docs/consumo.md`
 
-- [ ] Add documentation checks for immutable raw input, external 100K binaries, required fields, and limitations.
-- [ ] Run `cargo test --workspace --release` with `RUSTFLAGS=-C debuginfo=0`.
-- [ ] Run the smoke S1 command and audit its JSONL; confirm B0/B1 correctness and complete metadata.
-- [ ] Re-run the existing external 100K verifier, opt-in Rust contract, and audit without regenerating binaries unless the artifact is unavailable.
-- [ ] Verify `git status --short`, tracked files, and absence of 100K binaries from Git; preserve unrelated `graphify-out/` state.
-- [ ] Append the final task and plan rows to `docs/consumo.md` and commit with `docs: finalize S1 evidence completeness`.
+- [x] Add documentation checks for immutable raw input, external 100K binaries, required fields, and limitations.
+- [x] Run `cargo test --workspace --release` with `RUSTFLAGS=-C debuginfo=0`.
+- [x] Run the smoke S1 command and parse its JSONL; confirm B0/B1 correctness and complete metadata.
+- [x] Re-run the external 100K verifier, opt-in Rust contract, and audit; regenerate only the raw evidence required by the updated schema.
+- [x] Verify `git status --short`, tracked files, and absence of 100K binaries from Git; preserve unrelated `graphify-out/` state.
+- [x] Append the final task and plan rows to `docs/consumo.md` and commit with `docs: finalize S1 evidence completeness`.
 
 ## Final Verification
 

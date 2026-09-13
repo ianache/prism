@@ -75,6 +75,17 @@ pub fn workflow_tax_percent(base_p99: u128, compared_p99: u128) -> f64 {
     (compared_p99 as f64 - base_p99 as f64) / base_p99 as f64 * 100.0
 }
 
+pub fn workflow_tax_for_repetition(
+    baselines: &[(usize, u128)],
+    repetition: usize,
+    compared_p99: u128,
+) -> f64 {
+    baselines
+        .iter()
+        .find(|(baseline_repetition, _)| *baseline_repetition == repetition)
+        .map_or(0.0, |(_, base_p99)| workflow_tax_percent(*base_p99, compared_p99))
+}
+
 pub fn write_once_atomic(path: &Path, records: &[RawRecord]) -> Result<(), OutputError> {
     if path.exists() {
         return Err(OutputError::AlreadyExists);
