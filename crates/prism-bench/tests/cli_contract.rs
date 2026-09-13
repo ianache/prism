@@ -54,11 +54,39 @@ fn valid_s1_config_contains_protocol_parameters() {
 #[test]
 fn cli_rejects_invalid_scenario_and_level() {
     let mut args = valid_args().to_vec();
-    args[6] = "S5";
+    args[6] = "S6";
     assert_eq!(parse_args(args), Err(CliError::InvalidScenario));
     let mut args = valid_args().to_vec();
     args[4] = "b0,b3";
     assert_eq!(parse_args(args), Err(CliError::InvalidLevel));
+}
+
+#[test]
+fn cli_accepts_s5_with_100k_windows_and_default_duration() {
+    let mut args = valid_args().to_vec();
+    args[4] = "b0,b1,b2";
+    args[6] = "S5";
+    args[10] = "100000";
+    let config = parse_args(args).unwrap();
+    assert_eq!(config.duration_seconds, 900);
+    assert_eq!(config.measured_frames, 100_000);
+    assert_eq!(config.repetitions, 5);
+}
+
+#[test]
+fn cli_rejects_invalid_s5_duration_or_shape() {
+    let mut args = valid_args().to_vec();
+    args[4] = "b0,b1,b2";
+    args[6] = "S5";
+    args[10] = "100000";
+    args.extend(["--duration-seconds", "901"]);
+    assert_eq!(parse_args(args), Err(CliError::MissingValue));
+
+    let mut args = valid_args().to_vec();
+    args[4] = "b0,b1,b2";
+    args[6] = "S5";
+    args[10] = "10000";
+    assert_eq!(parse_args(args), Err(CliError::MissingValue));
 }
 
 #[test]

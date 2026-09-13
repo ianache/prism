@@ -1,0 +1,85 @@
+import argparse
+import json
+import math
+from pathlib import Path
+
+LEVELS = ("b0", "b1", "b2")
+REPETITIONS = (1, 2, 3, 4, 5)
+METRICS = ("p50_ns", "p95_ns", "p99_ns", "p99_9_ns", "max_ns", "frames_per_sec", "mb_per_sec")
+
+
+def fail(message):
+    raise SystemExit(message)
+
+
+def tax(base, compared):
+    return 0.0 if base == 0 else (compared - base) / base * 100.0
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--raw", type=Path, required=True)
+    parser.add_argument("--dataset", type=Path, required=True)
+    args = parser.parse_args()
+    try:
+        rows = [json.loads(line) for line in args.raw.read_text(encoding="utf-8").splitlines() if line.strip()]
+        manifest = json.loads((args.dataset / "manifest.json").read_text(encoding="utf-8"))
+        digest = (args.dataset / "manifest.sha256").read_text(encoding="ascii").strip()
+    except (OSError, json.JSONDecodeError) as error:
+        fail(f"invalid input: {error}")
+    keys = []
+    for row in rows:
+        key = (row.get("level"), row.get("repetition"), row.get("window_index"))
+        keys.append(key)
+        if row.get("scenario") != "S5" or row.get("protocol_version") != "1.1" or row.get("concurrency") != 1:
+            fail("invalid S5 protocol identity")
+        if row.get("level") not in LEVELS or row.get("repetition") not in REPETITIONS:
+            fail("invalid level or repetition")
+        if not isinstance(row.get("window_index"), int) or row["window_index"] < 0:
+            fail("invalid window index")
+        if row.get("measured_frames") != 100000:
+            fail("invalid measured_frames")
+        if row.get("dataset_digest") != digest or row.get("dataset_id") != manifest.get("dataset_id"):
+            fail("dataset identity mismatch")
+        if row.get("correctness_total") != row.get("correctness_matches"):
+            fail("correctness mismatch")
+        for name in METRICS:
+            value = row.get(name)
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) or value < 0:
+                fail(f"invalid metric: {name}")
+        for name in ("rss_before_bytes", "rss_after_bytes"):
+            value = row.get(name)
+            if value != "N/D" and (not isinstance(value, int) or value < 0):
+                fail(f"invalid resource metric: {name}")
+    if len(keys) != len(set(keys)):
+        fail("duplicate S5 window")
+    grouped = {(level, repetition): sorted((row for row in rows if row.get("level") == level and row.get("repetition") == repetition), key=lambda row: row["window_index"])
+               for level in LEVELS for repetition in REPETITIONS}
+    if any(not group for group in grouped.values()):
+        fail("missing level or repetition window")
+    for group in grouped.values():
+        if [row["window_index"] for row in group] != list(range(len(group))):
+            fail("non-contiguous window indices")
+    indexed = {(row["level"], row["repetition"], row["window_index"]): row for row in rows}
+    for level in LEVELS:
+        for repetition in REPETITIONS:
+            group = grouped[(level, repetition)]
+            first, last = group[0], group[-1]
+            if last["p99_ns"] > first["p99_ns"] * 1.10:
+                fail("p99 stability gate failed")
+            if first["rss_before_bytes"] != "N/D" and last["rss_after_bytes"] != "N/D" and last["rss_after_bytes"] > first["rss_before_bytes"] * 1.10:
+                fail("RSS growth gate failed")
+    for key, b0 in list(indexed.items()):
+        level, repetition, window = key
+        if level == "b0":
+            b1 = indexed.get(("b1", repetition, window))
+            b2 = indexed.get(("b2", repetition, window))
+            if b1 and not math.isclose(b1.get("workflow_tax_percent", 0.0), tax(b0["p99_ns"], b1["p99_ns"]), rel_tol=1e-9, abs_tol=1e-9):
+                fail("workflow tax mismatch")
+            if b1 and b2 and not math.isclose(b2.get("observability_tax_percent", 0.0), tax(b1["p99_ns"], b2["p99_ns"]), rel_tol=1e-9, abs_tol=1e-9):
+                fail("observability tax mismatch")
+    print(f"ok levels=b0,b1,b2 repetitions=5 frames=100000 windows={len(rows)}")
+
+
+if __name__ == "__main__":
+    main()

@@ -90,6 +90,31 @@ protocolo v1.1 y tax de observabilidad calculado por repetición.
 The evidence package does not claim P0, B2/B3, or S2–S5 qualification. Host
 resource values that cannot be collected are emitted as `N/D`.
 
+## S5
+
+S5 ejecuta B0/B1/B2 en cinco repeticiones secuenciales. Cada repetición usa
+un presupuesto de 180 segundos dentro de una duración total predeterminada de
+900 segundos y emite ventanas completas de exactamente 100.000 frames. La
+ventana final incompleta se informa y no se incluye en la evidencia comparable.
+
+```text
+cargo run -p prism-bench --release -- \
+  --dataset D:\\02-PERSONAL\\TOOLS\\prism-datasets\\p0-100k \
+  --levels b0,b1,b2 --scenario S5 --concurrency 1 \
+  --warmup 10000 --samples 100000 --repetitions 5 --duration-seconds 900 \
+  --output D:\\02-PERSONAL\\TOOLS\\prism-datasets\\p0-100k-s5.jsonl \
+  --cpu-model model --cores cores --ram-bytes ram \
+  --os windows --governor governor --affinity affinity
+python scripts/audit-rust-s5.py \
+  --dataset D:\\02-PERSONAL\\TOOLS\\prism-datasets\\p0-100k \
+  --raw D:\\02-PERSONAL\\TOOLS\\prism-datasets\\p0-100k-s5.jsonl
+```
+
+La auditoría valida estabilidad de p99, crecimiento RSS cuando está
+disponible, corrección total, identidad del dataset y taxes emparejados por
+nivel, repetición y ventana. S5 no constituye calificación P0 ni implementa
+B3, colas, brokers o transporte.
+
 ## S3
 
 S3 measures Rust B0/B1/B2 with five repetitions of 100,000 frames at

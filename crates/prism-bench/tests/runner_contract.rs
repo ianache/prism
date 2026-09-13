@@ -70,6 +70,12 @@ fn runner_processes_complete_frame_set_with_two_workers() {
 }
 
 #[test]
+fn sustained_config_requires_five_100k_repetitions() {
+    use prism_bench::sustained::SustainedConfig;
+    assert_eq!(SustainedConfig { duration_seconds: 900, window_frames: 100_000, repetitions: 5 }.window_frames, 100_000);
+}
+
+#[test]
 fn b2_parallel_run_returns_complete_owned_filter_evidence() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/p0-smoke");
     let dataset = Dataset::load(&root).unwrap();

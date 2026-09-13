@@ -39,6 +39,7 @@ pub struct Config {
     pub measured_frames: usize,
     pub concurrency: usize,
     pub concurrencies: Vec<usize>,
+    pub duration_seconds: u64,
 }
 
 pub type CliConfig = Config;
@@ -61,6 +62,7 @@ where
     let mut repetitions = 1usize;
     let mut output = "results/raw/s1.jsonl".to_owned();
     let mut concurrencies = vec![1usize];
+    let mut duration_seconds = 900u64;
     let mut index = 1;
     while index < values.len() {
         let flag = values[index].as_str();
@@ -73,7 +75,7 @@ where
             "--governor" => Some(4),
             "--affinity" => Some(5),
             "--levels" | "--scenario" | "--warmup" | "--samples" | "--repetitions" | "--output"
-            | "--concurrency" => None,
+            | "--concurrency" | "--duration-seconds" => None,
             _ => return Err(CliError::UnknownFlag),
         };
         if index + 1 >= values.len() {
@@ -94,6 +96,7 @@ where
                     .map(|item| item.parse().map_err(|_| CliError::MissingValue))
                     .collect::<Result<Vec<usize>, CliError>>()?;
             }
+            "--duration-seconds" => duration_seconds = value.parse().map_err(|_| CliError::MissingValue)?,
             _ => metadata[target.unwrap()] = Some(value),
         }
         index += 2;
@@ -101,7 +104,7 @@ where
     if dataset.is_none() || metadata.iter().any(Option::is_none) {
         return Err(CliError::MissingMetadata);
     }
-    if scenario != "S1" && scenario != "S2" && scenario != "S3" && scenario != "S4" {
+    if scenario != "S1" && scenario != "S2" && scenario != "S3" && scenario != "S4" && scenario != "S5" {
         return Err(CliError::InvalidScenario);
     }
     if levels.split(',').any(|level| !matches!(level, "b0" | "b1" | "b2")) {
@@ -147,6 +150,17 @@ where
     {
         return Err(CliError::MissingValue);
     }
+    if scenario == "S5"
+        && (samples != 100_000
+            || repetitions != 5
+            || concurrencies != [1]
+            || duration_seconds == 0
+            || duration_seconds % 5 != 0
+            || levels.split(',').collect::<std::collections::BTreeSet<_>>()
+                != ["b0", "b1", "b2"].into_iter().collect())
+    {
+        return Err(CliError::MissingValue);
+    }
     Ok(Config {
         dataset: dataset.unwrap(),
         metadata: metadata.map(Option::unwrap),
@@ -164,5 +178,6 @@ where
         measured_frames: samples,
         concurrency: concurrencies[0],
         concurrencies,
+        duration_seconds,
     })
 }
