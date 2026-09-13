@@ -1,6 +1,8 @@
 # Registro de consumo
 
-| 2026-09-13 | rust-s8-local-tcp-transport | tarea 1: CLI y frontera compartida | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | `--listen` y `process_line` compartido implementados; contratos CLI verdes. |
+| 2026-09-13 | rust-s9-multiclient-backpressure | plan y especificación S9 Multi-Client Concurrency and Backpressure | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Especificación aprobada y plan detallado creado; implementación pendiente. |
+
+ | 2026-09-13 | rust-s8-local-tcp-transport | tarea 1: CLI y frontera compartida | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | `--listen` y `process_line` compartido implementados; contratos CLI verdes. |
 | 2026-09-13 | rust-s8-local-tcp-transport | tarea 2: transporte TCP acotado | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Listener loopback serial, conexiones persistentes y límite 64 KiB implementados. |
 | 2026-09-13 | rust-s8-local-tcp-transport | tarea 3: integración TCP con S7 | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | E2E B0/B1/B2, errores en banda y reconexión verificados. |
 | 2026-09-13 | rust-s8-local-tcp-transport | tarea 4: lifecycle y no regresión | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | EOF, segunda conexión, oversized line y S7 stdin/stdout cubiertos. |
