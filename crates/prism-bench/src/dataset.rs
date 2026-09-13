@@ -108,7 +108,11 @@ impl Dataset {
         }
         let manifest = fs::read(path.join("manifest.json"))?;
         let manifest_text = String::from_utf8_lossy(&manifest);
-        let workload_text = manifest_text.split("\"workload\":{").nth(1).and_then(|text| text.split('}').next()).unwrap_or("");
+        let workload_text = manifest_text
+            .split("\"workload\":{")
+            .nth(1)
+            .and_then(|text| text.split('}').next())
+            .unwrap_or("");
         let expected_digest = fs::read_to_string(path.join("manifest.sha256"))?
             .trim()
             .to_owned();

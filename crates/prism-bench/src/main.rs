@@ -65,6 +65,9 @@ fn main() {
     metadata.insert("governor".to_owned(), host.governor);
     metadata.insert("container_limits".to_owned(), host.container_limits);
     metadata.insert("affinity".to_owned(), host.affinity);
+    metadata.insert("commit".to_owned(), host.commit);
+    metadata.insert("command".to_owned(), host.command);
+    metadata.insert("run_id".to_owned(), host.run_id);
     let mut records = Vec::new();
     for (level, run) in runs {
         for repetition in &run.repetitions {

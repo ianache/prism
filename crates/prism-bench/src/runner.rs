@@ -118,7 +118,9 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
         }
         previous_p99 = Some(current_p99);
     }
-    if !converged { return Err(RunError::WarmupDidNotConverge); }
+    if !converged {
+        return Err(RunError::WarmupDidNotConverge);
+    }
 
     let mut all_samples = Vec::with_capacity(config.repetitions * config.measured_frames);
     let mut repetitions = Vec::with_capacity(config.repetitions);

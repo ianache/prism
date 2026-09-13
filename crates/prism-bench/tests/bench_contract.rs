@@ -54,3 +54,14 @@ fn s1_runner_keeps_correctness_outside_timing() {
     assert_eq!(result.correctness_matches, 1);
     assert!(result.p95_ns >= result.p50_ns);
 }
+
+#[test]
+fn external_100k_dataset_contract_is_opt_in() {
+    let Some(path) = std::env::var_os("PRISM_100K_DATASET") else {
+        eprintln!("skipped: PRISM_100K_DATASET is not set");
+        return;
+    };
+    let dataset = Dataset::load(std::path::Path::new(&path)).unwrap();
+    assert_eq!(dataset.fixture_count, 100_000);
+    assert_eq!(dataset.fixtures.len(), dataset.expected.len());
+}

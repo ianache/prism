@@ -2,7 +2,8 @@
 
 El workspace usa solo la biblioteca estándar y contiene `prism-runtime` y
 `prism-bench`. B0 es la ruta directa; B1 valida un registro estático F1–F6.
-Ambas rutas se comparan contra el oráculo Python en 300 fixtures inmutables.
+Ambas rutas se comparan contra el oráculo Python en el corpus smoke de 300
+fixtures y en el corpus externo protocolario de 100.000 fixtures.
 
 ## Verificación
 
@@ -29,6 +30,27 @@ cargo run -p prism-bench --release -- \
 La medición primaria usa `Instant` alrededor del procesamiento de bytes
 residentes; I/O, carga de contratos, serialización, comparación y escritura
 quedan fuera. Los percentiles son nearest-rank.
+
+## Validación externa de 100K
+
+Los binarios individuales se generan fuera del repositorio. El manifiesto, su
+digest y la salida JSONL son los artefactos auditables; no se versiona el
+corpus binario:
+
+```text
+powershell -ExecutionPolicy Bypass -File scripts/prepare-rust-100k.ps1
+python scripts/audit-rust-s1.py \
+  --dataset D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k \
+  --raw D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k-s1.jsonl
+```
+
+La prueba Rust de conteo es opt-in mediante `PRISM_100K_DATASET`; sin esa
+variable el contrato no carga el corpus pesado. La auditoría S1 exige diez
+filas (cinco repeticiones para B0 y B1), digest coincidente, corrección total
+y tax de workflow numérico.
+
+La ejecución validada produjo 10 filas, 100.000 fixtures y digest
+`269eb27cdeed982f81cb0ecb82e2c279014a19fa67bf998ccf529a681ea145c4`.
 
 S1 es evidencia de ingeniería y no constituye una calificación P0. El release
 externo de 1,000,000 de archivos individuales permanece pendiente y fuera de
