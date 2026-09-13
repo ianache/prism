@@ -42,6 +42,22 @@ class S5AuditTests(unittest.TestCase):
         self.assertNotEqual(self.run_audit(lambda rows: rows[1].update(window_index=0)).returncode, 0)
         self.assertNotEqual(self.run_audit(lambda rows: rows[0].update(measured_frames=10)).returncode, 0)
 
+    def test_different_window_counts_are_valid_when_intersection_exists(self):
+        def remove_last_b2(rows):
+            rows[:] = [row for row in rows if not (row["level"] == "b2" and row["window_index"] == 1)]
+        self.assertEqual(self.run_audit(remove_last_b2).returncode, 0)
+
+    def test_gate_failure_is_reported_without_rejecting_integrity(self):
+        def degrade_last_b0(rows):
+            for row in rows:
+                if row["level"] == "b0" and row["window_index"] == 1:
+                    row["p99_ns"] = 1000
+                if row["level"] == "b1" and row["window_index"] == 1:
+                    row["workflow_tax_percent"] = -90.0
+        result = self.run_audit(degrade_last_b0)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("gate_failures", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

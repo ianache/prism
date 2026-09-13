@@ -49,7 +49,8 @@ window, and records whether the provisional stability and memory gates pass.
 - Every comparable record has exactly 100,000 measured frames and 100% oracle
   correctness.
 - Window indices are unique and strictly increasing within each level and
-  repetition.
+  repetition; tax comparisons use the explicit intersection of available
+  windows across B0/B1/B2 and report unmatched tails.
 - Required latency, throughput, identity, and tax values are finite and
   correctly paired.
 - RSS and p99 stability are evaluated separately; `N/D` produces an

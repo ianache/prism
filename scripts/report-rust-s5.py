@@ -16,7 +16,10 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     rows = [json.loads(line) for line in args.raw.read_text(encoding="utf-8").splitlines() if line.strip()]
-    audit_text = args.audit.read_text(encoding="utf-8")
+    try:
+        audit_text = args.audit.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        audit_text = args.audit.read_text(encoding="utf-16")
     raw_digest = hashlib.sha256(args.raw.read_bytes()).hexdigest()
     groups = {(level, repetition): sorted((row for row in rows if row.get("level") == level and row.get("repetition") == repetition), key=lambda row: row["window_index"])
               for level in ("b0", "b1", "b2") for repetition in range(1, 6)}

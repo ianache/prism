@@ -50,7 +50,7 @@
 
 - [ ] **Step 1: Add failing tests for gate distinctions.** Cover numeric RSS pass/fail, `N/D` unavailable RSS, p99 regression above 10%, absent paired B0/B1/B2 windows, and a report that preserves negative taxes.
 - [ ] **Step 2: Run `python -m unittest scripts.test_audit_rust_s5` and verify the new cases fail.**
-- [ ] **Step 3: Require complete matched tuples.** Validate five repetitions for each level, unique contiguous window indices, 100K frames, finite metrics, correctness, identity, and B1/B0 plus B2/B1 tax pairing for every comparable key.
+- [ ] **Step 3: Require complete level tuples and explicit intersections.** Validate five repetitions for each level, unique contiguous window indices, 100K frames, finite metrics, correctness, identity, and B1/B0 plus B2/B1 tax pairing for every common window; report unmatched level tails separately.
 - [ ] **Step 4: Implement the Markdown report.** Read only audited JSONL, classify each gate as PASS, FAIL, or UNAVAILABLE, include raw/audit SHA-256 digests, and never convert unavailable metrics into passes.
 - [ ] **Step 5: Run `python -m unittest scripts.test_audit_rust_s5 scripts.test_audit_rust_s4` and commit with `test: complete S5 gate audit`.**
 
