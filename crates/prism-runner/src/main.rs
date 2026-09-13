@@ -30,11 +30,21 @@ fn main() {
                 std::process::exit(2);
             }
         };
-        if let Err(error) = transport::serve(listener, args.route, &args.request_id_prefix, 0) {
+        if let Err(error) = transport::serve(
+            listener,
+            args.route,
+            &args.request_id_prefix,
+            args.workers,
+            args.connection_queue,
+        ) {
             eprintln!("transport failed: {error}");
             std::process::exit(2);
         }
         return;
+    }
+    if args.workers != 1 || args.connection_queue != 0 {
+        eprintln!("--workers and --connection-queue require --listen");
+        std::process::exit(2);
     }
     let stdin = io::stdin();
     let mut stdout = io::BufWriter::new(io::stdout().lock());

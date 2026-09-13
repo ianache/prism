@@ -6,6 +6,32 @@ fn accepts_routes_and_default_prefix() {
     assert_eq!(args.route, Route::B2);
     assert_eq!(args.request_id_prefix, "req");
     assert_eq!(args.listen, None);
+    assert_eq!((args.workers, args.connection_queue), (1, 0));
+}
+
+#[test]
+fn accepts_bounded_worker_settings() {
+    let args = parse_args([
+        "prism-run",
+        "--route",
+        "b1",
+        "--listen",
+        "127.0.0.1:0",
+        "--workers",
+        "2",
+        "--connection-queue",
+        "3",
+    ])
+    .unwrap();
+    assert_eq!((args.workers, args.connection_queue), (2, 3));
+    assert_eq!(
+        parse_args(["prism-run", "--route", "b1", "--workers", "0"]),
+        Err(CliError::InvalidValue("--workers".into()))
+    );
+    assert_eq!(
+        parse_args(["prism-run", "--route", "b1", "--connection-queue", "bad"]),
+        Err(CliError::InvalidValue("--connection-queue".into()))
+    );
 }
 
 #[test]

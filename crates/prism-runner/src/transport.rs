@@ -1,5 +1,7 @@
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
 
 use crate::{output, process_line, Route};
 
@@ -94,17 +96,88 @@ fn handle_connection(
     }
 }
 
+pub fn capacity(workers: usize, queue: usize) -> usize {
+    workers.saturating_add(queue)
+}
+
+struct Job {
+    stream: TcpStream,
+    permits: Arc<Mutex<usize>>,
+}
+
+fn worker_loop(receiver: Arc<Mutex<mpsc::Receiver<Job>>>, route: Route, prefix: String) {
+    loop {
+        let job = match receiver.lock().expect("worker queue lock poisoned").recv() {
+            Ok(job) => job,
+            Err(_) => return,
+        };
+        if let Err(error) = handle_connection(job.stream, route, &prefix, &mut 0usize) {
+            eprintln!("connection failed: {error}");
+        }
+        *job.permits.lock().expect("capacity lock poisoned") += 1;
+    }
+}
+
+fn reject_capacity(mut stream: TcpStream, route: Route) -> io::Result<()> {
+    let value = output::error(
+        "connection",
+        route.as_str(),
+        "CAPACITY_EXCEEDED",
+        "connection capacity is full",
+    );
+    write_line(&mut stream, &value)
+}
+
 pub fn serve(
     listener: TcpListener,
     route: Route,
     prefix: &str,
-    mut sequence: usize,
+    workers: usize,
+    queue: usize,
 ) -> io::Result<()> {
     eprintln!("LISTENING {}", listener.local_addr()?);
+    let limit = capacity(workers, queue);
+    let permits = Arc::new(Mutex::new(limit));
+    let (sender, receiver) = mpsc::sync_channel(limit.max(1));
+    let receiver = Arc::new(Mutex::new(receiver));
+    for _ in 0..workers {
+        let receiver = Arc::clone(&receiver);
+        let prefix = prefix.to_owned();
+        thread::spawn(move || worker_loop(receiver, route, prefix));
+    }
     for incoming in listener.incoming() {
         match incoming {
             Ok(stream) => {
-                handle_connection(stream, route, prefix, &mut sequence)?;
+                let admitted = {
+                    let mut available = permits.lock().expect("capacity lock poisoned");
+                    if *available == 0 {
+                        false
+                    } else {
+                        *available -= 1;
+                        true
+                    }
+                };
+                if !admitted {
+                    reject_capacity(stream, route)?;
+                    continue;
+                }
+                let job = Job {
+                    stream,
+                    permits: Arc::clone(&permits),
+                };
+                match sender.try_send(job) {
+                    Ok(()) => {}
+                    Err(mpsc::TrySendError::Full(job)) => {
+                        *job.permits.lock().expect("capacity lock poisoned") += 1;
+                        reject_capacity(job.stream, route)?;
+                    }
+                    Err(mpsc::TrySendError::Disconnected(_)) => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::BrokenPipe,
+                            "worker pool stopped",
+                        ))
+                    }
+                }
             }
             Err(error) => return Err(error),
         }
@@ -125,5 +198,10 @@ mod tests {
     #[test]
     fn rejects_invalid_address() {
         assert!(parse_listen("not-an-address").is_err());
+    }
+    #[test]
+    fn capacity_is_active_workers_plus_queue() {
+        assert_eq!(capacity(2, 3), 5);
+        assert_eq!(capacity(1, 0), 1);
     }
 }

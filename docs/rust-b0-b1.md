@@ -172,3 +172,13 @@ Envía las mismas líneas JSONL desde un cliente TCP. El proceso anuncia la
 dirección efectiva por stderr (`LISTENING ...`), procesa varias solicitudes por
 conexión y acepta otra conexión después de un EOF limpio. Las líneas mayores de
 64 KiB cierran solo la conexión actual.
+
+Para habilitar concurrencia acotada entre clientes:
+
+```powershell
+rtk proxy .\target\release\prism-run.exe --route b2 --listen 127.0.0.1:9000 --workers 2 --connection-queue 2 --request-id-prefix s9
+```
+
+Cada conexión conserva su propio orden. Si los workers y la cola están llenos,
+la conexión adicional recibe `CAPACITY_EXCEEDED` y se cierra; el listener sigue
+activo y recupera capacidad cuando un cliente termina.
