@@ -15,6 +15,9 @@ def make_row(level, repetition, window, p99):
         "correctness_total": 100000, "correctness_matches": 100000, "p50_ns": 1, "p95_ns": 2, "p99_ns": p99,
         "p99_9_ns": 3, "max_ns": 4, "frames_per_sec": 1.0, "mb_per_sec": 1.0,
         "duration_seconds": 0.2,
+        "window_started_ns": 1, "window_finished_ns": 2, "repetition_elapsed_ns": 3,
+        "process_cpu_before_ns": 10, "process_cpu_after_ns": 20,
+        "system_cpu_before_ns": 30, "system_cpu_after_ns": 40,
         "rss_before_bytes": "N/D", "rss_after_bytes": "N/D", "workflow_tax_percent": 0.0, "observability_tax_percent": 0.0,
     }
 
@@ -57,6 +60,11 @@ class S5AuditTests(unittest.TestCase):
         result = self.run_audit(degrade_last_b0)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("gate_failures", result.stdout)
+
+    def test_negative_cpu_diagnostic_is_rejected(self):
+        result = self.run_audit(lambda rows: rows[0].update(process_cpu_after_ns=-1))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("diagnostic", result.stderr)
 
 
 if __name__ == "__main__":

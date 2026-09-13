@@ -14,6 +14,9 @@ pub struct SustainedConfig {
 pub struct ResourceSnapshot {
     pub rss_bytes: Option<u64>,
     pub sampled_at_ns: u128,
+    pub monotonic_at_ns: u128,
+    pub process_cpu_ns: Option<u128>,
+    pub system_cpu_ns: Option<u128>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -36,6 +39,9 @@ pub struct SustainedWindow {
     pub resource_before: ResourceSnapshot,
     pub resource_after: ResourceSnapshot,
     pub incomplete_tail_frames: usize,
+    pub window_started_ns: u128,
+    pub window_finished_ns: u128,
+    pub repetition_elapsed_ns: u128,
     pub execution_id: String,
     pub observability_variant: String,
     pub filter_timings_ns: std::collections::BTreeMap<String, u128>,
@@ -72,6 +78,47 @@ extern "system" {
     fn GetProcessMemoryInfo(process: *mut std::ffi::c_void, counters: *mut ProcessMemoryCounters, size: u32) -> i32;
 }
 
+#[cfg(windows)]
+#[repr(C)]
+struct FileTime { low: u32, high: u32 }
+
+#[cfg(windows)]
+#[link(name = "kernel32")]
+extern "system" {
+    fn GetProcessTimes(process: *mut std::ffi::c_void, creation: *mut FileTime, exit: *mut FileTime, kernel: *mut FileTime, user: *mut FileTime) -> i32;
+    fn GetSystemTimes(idle: *mut FileTime, kernel: *mut FileTime, user: *mut FileTime) -> i32;
+}
+
+#[cfg(windows)]
+fn file_time_ns(value: FileTime) -> u128 { (((value.high as u128) << 32) | value.low as u128) * 100 }
+
+fn process_cpu_ns() -> Option<u128> {
+    #[cfg(windows)]
+    unsafe {
+        let mut creation = FileTime { low: 0, high: 0 };
+        let mut exit = FileTime { low: 0, high: 0 };
+        let mut kernel = FileTime { low: 0, high: 0 };
+        let mut user = FileTime { low: 0, high: 0 };
+        if GetProcessTimes((-1isize) as *mut _, &mut creation, &mut exit, &mut kernel, &mut user) != 0 {
+            return Some(file_time_ns(kernel) + file_time_ns(user));
+        }
+    }
+    None
+}
+
+fn system_cpu_ns() -> Option<u128> {
+    #[cfg(windows)]
+    unsafe {
+        let mut idle = FileTime { low: 0, high: 0 };
+        let mut kernel = FileTime { low: 0, high: 0 };
+        let mut user = FileTime { low: 0, high: 0 };
+        if GetSystemTimes(&mut idle, &mut kernel, &mut user) != 0 {
+            return Some(file_time_ns(kernel) + file_time_ns(user));
+        }
+    }
+    None
+}
+
 fn rss_bytes() -> Option<u64> {
     #[cfg(windows)]
     unsafe {
@@ -90,7 +137,9 @@ fn snapshot() -> ResourceSnapshot {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_nanos())
         .unwrap_or(0);
-    ResourceSnapshot { rss_bytes: rss_bytes(), sampled_at_ns }
+    static MONOTONIC_ORIGIN: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+    let monotonic_at_ns = MONOTONIC_ORIGIN.get_or_init(Instant::now).elapsed().as_nanos();
+    ResourceSnapshot { rss_bytes: rss_bytes(), sampled_at_ns, monotonic_at_ns, process_cpu_ns: process_cpu_ns(), system_cpu_ns: system_cpu_ns() }
 }
 
 pub fn run_sustained(
@@ -119,12 +168,15 @@ pub fn run_sustained(
     };
     let mut windows = Vec::new();
     for repetition in 1..=config.repetitions {
+        let repetition_started = Instant::now();
         let deadline = Instant::now() + std::time::Duration::from_secs(per_repetition);
         let mut window_index = 0;
         while Instant::now() < deadline || window_index == 0 {
             let before = snapshot();
             let run = run_level(level, dataset, &run_config)?;
             let after = snapshot();
+            let window_started_ns = before.sampled_at_ns;
+            let window_finished_ns = after.sampled_at_ns;
             let metrics = &run.repetitions[0];
             windows.push(SustainedWindow {
                 repetition,
@@ -145,6 +197,9 @@ pub fn run_sustained(
                 resource_before: before,
                 resource_after: after,
                 incomplete_tail_frames: 0,
+                window_started_ns,
+                window_finished_ns,
+                repetition_elapsed_ns: repetition_started.elapsed().as_nanos(),
                 execution_id: run.execution_id,
                 observability_variant: run.observability_variant,
                 filter_timings_ns: run.filter_timings_ns,

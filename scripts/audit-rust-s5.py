@@ -28,6 +28,7 @@ def main():
     except (OSError, json.JSONDecodeError) as error:
         fail(f"invalid input: {error}")
     keys = []
+    diagnostics_enabled = any("window_started_ns" in row for row in rows)
     for row in rows:
         key = (row.get("level"), row.get("repetition"), row.get("window_index"))
         keys.append(key)
@@ -49,6 +50,17 @@ def main():
                 fail(f"invalid metric: {name}")
         if not isinstance(row.get("duration_seconds"), (int, float)) or not math.isfinite(row["duration_seconds"]) or row["duration_seconds"] <= 0:
             fail("invalid duration_seconds")
+        if diagnostics_enabled:
+            if not all(isinstance(row.get(name), int) and row[name] >= 0 for name in ("window_started_ns", "window_finished_ns", "repetition_elapsed_ns")):
+                fail("invalid diagnostic timestamps")
+            if row["window_finished_ns"] <= row["window_started_ns"]:
+                fail("non-monotonic window timestamps")
+            cpu_names = ("process_cpu_before_ns", "process_cpu_after_ns", "system_cpu_before_ns", "system_cpu_after_ns")
+            cpu_values = [row.get(name) for name in cpu_names]
+            if any(value is not None and (not isinstance(value, int) or value < 0) for value in cpu_values):
+                fail("invalid diagnostic CPU metrics")
+            if all(value is not None for value in cpu_values) and (row["process_cpu_after_ns"] < row["process_cpu_before_ns"] or row["system_cpu_after_ns"] < row["system_cpu_before_ns"]):
+                fail("invalid diagnostic CPU ordering")
         for name in ("rss_before_bytes", "rss_after_bytes"):
             value = row.get(name)
             if value != "N/D" and (not isinstance(value, int) or value < 0):

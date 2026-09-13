@@ -76,6 +76,16 @@ fn sustained_config_requires_five_100k_repetitions() {
 }
 
 #[test]
+fn resource_snapshot_preserves_optional_cpu_metrics_and_monotonic_order() {
+    use prism_bench::sustained::ResourceSnapshot;
+    let before = ResourceSnapshot { rss_bytes: Some(10), sampled_at_ns: 100, monotonic_at_ns: 1, process_cpu_ns: Some(20), system_cpu_ns: Some(30) };
+    let after = ResourceSnapshot { rss_bytes: Some(11), sampled_at_ns: 101, monotonic_at_ns: 2, process_cpu_ns: Some(25), system_cpu_ns: Some(35) };
+    assert!(after.monotonic_at_ns > before.monotonic_at_ns);
+    assert_eq!(after.process_cpu_ns.unwrap() - before.process_cpu_ns.unwrap(), 5);
+    assert_eq!(after.system_cpu_ns.unwrap() - before.system_cpu_ns.unwrap(), 5);
+}
+
+#[test]
 fn b2_parallel_run_returns_complete_owned_filter_evidence() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/p0-smoke");
     let dataset = Dataset::load(&root).unwrap();

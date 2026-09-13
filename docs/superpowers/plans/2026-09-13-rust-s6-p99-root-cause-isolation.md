@@ -142,10 +142,17 @@ rtk proxy git ls-files "*100k*"
 - [ ] **Step 2: Re-run S5/S6 audits and comparison** and verify every gate and limitation is present.
 - [ ] **Step 3: Confirm no raw JSONL, binary fixture, or host-specific temporary output is tracked.**
 - [ ] **Step 4: Mark tasks and plan status in `docs/consumo.md` before reporting completion.**
-- [ ] **Step 5: Use the finishing workflow to present merge/publish options; do not merge automatically.**
+- [x] **Step 5: Use the finishing workflow to present merge/publish options; do not merge automatically.**
 
 ## Self-review
 
 - Coverage: Task 1 implements telemetry, Task 2 audits and reports it, Task 3 creates the controlled package, Task 4 compares hypotheses, and Task 5 verifies and hands off integration.
 - No threshold changes, outlier removal, selective reruns, or runtime/transport additions are permitted.
 - `N/D` is used only for unavailable optional telemetry; malformed required protocol data remains a hard failure.
+
+## Execution outcome
+
+Tasks 1–5 completed on `work/rust-s6-p99-root-cause-isolation`. CPU telemetry
+was present and correctly audited; correctness and RSS passed, but p99
+ stability remained failed. The root cause is unresolved and P0 qualification
+ is explicitly withheld.

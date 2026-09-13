@@ -1,6 +1,22 @@
 # Registro de consumo
 
+ | 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 1: contratos de telemetría CPU y serialización | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 7 contratos runner/output correctos; commit e8adb65. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 2: auditoría y reporte diagnóstico | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 6 pruebas focalizadas correctas; commit d9133e9. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 3: ejecución externa S6 100K | COMPLETADO | 2026-09-13 13:19:04 | 2026-09-13 13:34:00 | 900 | N/D | N/D | N/D | reloj del proceso | 549 ventanas, código 0, raw SHA-256 e7c8be55...; preflight y digest vinculados. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 4: comparación y decisión de causa raíz | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | CPU presente, RSS PASS, p99 FAIL; causa raíz no aislada. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 5: verificación final e integración | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 25 tests Python, protocolo 2/2, Cargo release completo; merge/publicación quedan para handoff. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | plan completo: S6 P99 Root-Cause Isolation 100K | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Telemetría, corrida, comparación y verificación completadas; p99 sigue FAIL y no se reclama P0. |
+
+| 2026-09-13 | rust-s5-stability-remediation | tarea 1: identidad y timestamps diagnósticos | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Campos de frontera serializados; smoke y suite prism-bench release correctos. |
+| 2026-09-13 | rust-s5-stability-remediation | tarea 2: auditoría, pairing y reporte diagnóstico | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Auditoría acepta timestamps, reporta tails y gates; tests focalizados correctos. |
+| 2026-09-13 | rust-s5-stability-remediation | tarea 3: corrida externa remediada de 900 s | COMPLETADO | 2026-09-13 11:50:40 | 2026-09-13 12:33:00 | 2540 | N/D | N/D | N/D | reloj del proceso | Preflight vinculado al commit 082900d; salida inmutable con 615 ventanas y código 0. |
+| 2026-09-13 | rust-s5-stability-remediation | tarea 4: comparación y nota de evidencia | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Raw SHA-256 0dbda7cc...; correctness/RSS PASS, p99 FAIL; causa raíz no aislada. |
+| 2026-09-13 | rust-s5-stability-remediation | tarea 5: verificación final y publicación | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Suite final, commit 779fae9 y evidencia documentada; integración a main queda sujeta a decisión. |
 | 2026-09-13 | rust-s6-p99-root-cause-isolation | plan y especificación S6 P99 Root-Cause Isolation 100K | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Especificación aprobada y plan detallado creado; implementación pendiente. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 1: contratos de telemetría CPU y serialización | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 7 contratos runner/output correctos; commit e8adb65. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 2: auditoría y reporte diagnóstico | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 6 pruebas focalizadas correctas; commit d9133e9. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 3: ejecución externa S6 100K | COMPLETADO | 2026-09-13 13:19:04 | 2026-09-13 13:34:00 | 900 | N/D | N/D | N/D | reloj del proceso | 549 ventanas, código 0, raw SHA-256 e7c8be55...; preflight y digest vinculados. |
+| 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 4: comparación y decisión de causa raíz | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | CPU presente, RSS PASS, p99 FAIL; causa raíz no aislada. |
 
 | Fecha | Plan | Identificador y tarea | Estado | Inicio | Fin | Tiempo (s) | Tokens entrada | Tokens salida | Tokens totales | Fuente medición | Observaciones |
 |---|---|---|---|---|---|---:|---:|---:|---:|---|---|
@@ -82,4 +98,4 @@
 | 2026-09-13 | rust-s5-evidence-completion | tarea 4: auditoría, reporte y gates S5 | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Auditoría aceptada con gate p99 negativo y RSS PASS; corrección PASS, RSS máximo 0.669886%, p99 máximo 124.015748%; reporte generado. |
 | 2026-09-13 | rust-s5-evidence-completion | tarea 5: verificación final y publicación de evidencia | PARCIAL | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Evidencia documentada; falta integrar/publicar los cambios documentales y no se reclama P0 por fallo del gate p99. |
 | 2026-09-13 | rust-s5-stability-remediation | plan y especificación S5 Stability Remediation 100K | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Alcance aprobado para diagnosticar y remediar el fallo p99 sin cambiar la meta de 100.000 frames ni el umbral provisional. |
-| 2026-09-13 | rust-s5-stability-remediation | plan completo: S5 Stability Remediation 100K | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Especificación aprobada y plan detallado creado; pendiente de ejecución. |
+| 2026-09-13 | rust-s5-stability-remediation | plan completo: S5 Stability Remediation 100K | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Diagnóstico, corrida remediada, comparación y verificación final completados; p99 sigue FAIL y no se reclama P0. |

@@ -13,6 +13,14 @@ python -m tools.dataset.verify --dataset tests/fixtures/p0-smoke
 cargo test --workspace --release
 ```
 
+### S5 stability remediation
+
+The 2026-09-13 diagnostic rerun preserved the 100,000-frame target and added
+window boundary timestamps outside the timed filter path. Correctness and RSS
+passed, but p99 stability remained above the provisional 10% gate. See
+`docs/evidence/rust-s5-stability-remediation-2026-09-13.md` for the unresolved
+root-cause hypotheses and explicit non-qualification.
+
 ## S1
 
 The S1 records already produced with 10,000 measured frames are historical
@@ -115,6 +123,10 @@ La auditoría valida estabilidad de p99, crecimiento RSS cuando está
 disponible, corrección total, identidad del dataset y taxes emparejados por
 nivel, repetición y ventana. S5 no constituye calificación P0 ni implementa
 B3, colas, brokers o transporte.
+
+S6 reuses the S5 protocol shape and adds optional process/system CPU
+diagnostics outside the timed path. Its immutable output is identified as an
+S6 root-cause-isolation package and remains engineering evidence only.
 
 ## S3
 

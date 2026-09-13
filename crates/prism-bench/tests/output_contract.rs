@@ -64,7 +64,8 @@ fn record() -> RawRecord {
         baseline_frames_per_sec: 80.0,
         burst_frames_per_sec: 800.0,
         window_index: 0, duration_seconds: 0.0, rss_before_bytes: None, rss_after_bytes: None,
-        incomplete_tail_frames: 0,
+        incomplete_tail_frames: 0, window_started_ns: 0, window_finished_ns: 0, repetition_elapsed_ns: 0,
+        process_cpu_before_ns: Some(20), process_cpu_after_ns: Some(25), system_cpu_before_ns: Some(30), system_cpu_after_ns: Some(35),
     }
 }
 
@@ -134,6 +135,13 @@ fn raw_record_serializes_required_metrics() {
         "rss_before_bytes",
         "rss_after_bytes",
         "incomplete_tail_frames",
+        "process_cpu_before_ns",
+        "process_cpu_after_ns",
+        "system_cpu_before_ns",
+        "system_cpu_after_ns",
+        "window_started_ns",
+        "window_finished_ns",
+        "repetition_elapsed_ns",
     ] {
         assert!(json.contains(&format!("\"{key}\"")), "missing {key}");
     }
