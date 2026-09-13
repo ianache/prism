@@ -95,13 +95,18 @@ where
     if dataset.is_none() || metadata.iter().any(Option::is_none) {
         return Err(CliError::MissingMetadata);
     }
-    if scenario != "S1" {
+    if scenario != "S1" && scenario != "S2" {
         return Err(CliError::InvalidScenario);
     }
     if levels.split(',').any(|level| !matches!(level, "b0" | "b1" | "b2")) {
         return Err(CliError::InvalidLevel);
     }
     if levels.split(',').any(|level| level == "b2") && !levels.split(',').any(|level| level == "b1") {
+        return Err(CliError::MissingValue);
+    }
+    if scenario == "S2" && !(levels.split(',').any(|level| level == "b0")
+        && levels.split(',').any(|level| level == "b1")
+        && levels.split(',').any(|level| level == "b2")) {
         return Err(CliError::MissingValue);
     }
     if warmup == 0 || samples == 0 || repetitions == 0 || concurrency != 1 {
