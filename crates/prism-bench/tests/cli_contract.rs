@@ -53,7 +53,7 @@ fn valid_s1_config_contains_protocol_parameters() {
 #[test]
 fn cli_rejects_invalid_scenario_and_level() {
     let mut args = valid_args().to_vec();
-    args[6] = "S2";
+    args[6] = "S3";
     assert_eq!(parse_args(args), Err(CliError::InvalidScenario));
     let mut args = valid_args().to_vec();
     args[4] = "b0,b3";
@@ -76,4 +76,15 @@ fn cli_rejects_b2_without_b1_baseline() {
     args[4] = "b2";
     args[10] = "100000";
     assert_eq!(parse_args(args), Err(CliError::MissingValue));
+}
+
+#[test]
+fn cli_accepts_s2_with_b0_b1_b2_and_100k() {
+    let mut args = valid_args().to_vec();
+    args[4] = "b0,b1,b2";
+    args[6] = "S2";
+    args[10] = "100000";
+    let config = parse_args(args).unwrap();
+    assert_eq!(config.scenario, "S2");
+    assert_eq!(config.measured_frames, 100_000);
 }
