@@ -1,5 +1,7 @@
 # Registro de consumo
 
+| 2026-09-13 | rust-s8-local-tcp-transport | plan y especificación S8 Local TCP Transport | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Especificación aprobada y plan detallado creado; implementación pendiente. |
+
  | 2026-09-13 | rust-s7-production-vertical-slice | plan y especificación S7 Production Vertical Slice | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Diseño aprobado; contrato JSONL refinado a `request_id` + `payload_hex`; plan detallado creado; implementación pendiente. |
 | 2026-09-13 | rust-s7-production-vertical-slice | tarea 1: crate runner y contrato CLI | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Rutas B0/B1/B2, argumentos y ayuda implementados; contratos focalizados verdes. |
 | 2026-09-13 | rust-s7-production-vertical-slice | tarea 2: sobre JSONL y frontera hexadecimal | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Parser std-only, escapes, errores estables y hex validado; contratos verdes. |
