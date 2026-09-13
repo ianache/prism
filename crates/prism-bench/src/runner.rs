@@ -168,6 +168,12 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
     let mut typed_rejections = 0usize;
     let mut execution_failures = 0usize;
     let mut collector = Collector::default();
+    for name in ["F1", "F2", "F3", "F4", "F5", "F6"] {
+        collector.timings.insert(name.to_owned(), 0);
+        collector.invocations.insert(name.to_owned(), 0);
+        collector.rejections.insert(name.to_owned(), 0);
+        collector.failures.insert(name.to_owned(), 0);
+    }
     for repetition in 0..config.repetitions {
         let mut samples = Vec::with_capacity(config.measured_frames);
         let mut outcomes = Vec::with_capacity(config.measured_frames);

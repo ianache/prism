@@ -60,6 +60,11 @@ fn main() {
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
+    let b1_p99_by_repetition = runs
+        .iter()
+        .find(|(level, _)| level == "b1")
+        .map(|(_, run)| run.repetitions.iter().map(|r| (r.repetition, r.p99_ns)).collect::<Vec<_>>())
+        .unwrap_or_default();
     let host = Metadata::collect(&config);
     let mut metadata = BTreeMap::new();
     metadata.insert("cpu_model".to_owned(), host.cpu_model);
@@ -131,7 +136,9 @@ fn main() {
                 filter_invocations: run.filter_invocations.clone(),
                 filter_rejections: run.filter_rejections.clone(),
                 filter_execution_failures: run.filter_execution_failures.clone(),
-                observability_tax_percent: 0.0,
+                observability_tax_percent: if level == "b2" {
+                    workflow_tax_for_repetition(&b1_p99_by_repetition, repetition.repetition, repetition.p99_ns)
+                } else { 0.0 },
             });
         }
     }
