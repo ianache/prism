@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::sync::Barrier;
 use std::time::Instant;
 
 use prism_runtime::{b0, b1::{FilterId, ObservationOutcome, Observer, Pipeline}, Outcome};
@@ -77,6 +78,11 @@ struct Collector {
     failures: BTreeMap<String, usize>,
 }
 
+struct WorkerResult {
+    frames: Vec<(usize, Outcome, u128)>,
+    collector: Collector,
+}
+
 fn filter_name(filter: FilterId) -> String { format!("F{}", filter as usize + 1) }
 
 impl Observer for Collector {
@@ -97,6 +103,7 @@ pub enum RunError {
     InvalidConfig,
     WarmupDidNotConverge,
     CorrectnessMismatch { frame: usize },
+    WorkerJoinFailure,
 }
 
 fn execute(level: Level, pipeline: Option<&Pipeline>, payload: &[u8]) -> Outcome {
@@ -124,9 +131,75 @@ fn convergence_ok(previous: u128, current: u128, threshold: u32) -> bool {
     previous.abs_diff(current) * 100 <= previous * threshold as u128
 }
 
+fn execute_parallel(
+    level: Level,
+    dataset: &Dataset,
+    measured_frames: usize,
+    concurrency: usize,
+) -> Result<(Vec<Outcome>, Vec<u128>, Collector, u128), RunError> {
+    let barrier = Barrier::new(concurrency + 1);
+    let start = Instant::now();
+    let results = std::thread::scope(|scope| {
+        let mut handles = Vec::with_capacity(concurrency);
+        for worker_id in 0..concurrency {
+            let barrier = &barrier;
+            handles.push(scope.spawn(move || {
+                let pipeline = (level != Level::B0).then(|| Pipeline::new().expect("static B1 registry"));
+                let mut collector = Collector::default();
+                for name in ["F1", "F2", "F3", "F4", "F5", "F6"] {
+                    collector.timings.insert(name.to_owned(), 0);
+                    collector.invocations.insert(name.to_owned(), 0);
+                    collector.rejections.insert(name.to_owned(), 0);
+                    collector.failures.insert(name.to_owned(), 0);
+                }
+                let mut frames = Vec::new();
+                barrier.wait();
+                for index in (worker_id..measured_frames).step_by(concurrency) {
+                    let payload = &dataset.fixtures[index % dataset.fixtures.len()];
+                    let frame_start = Instant::now();
+                    let outcome = if level == Level::B2 {
+                        pipeline.as_ref().unwrap().process_observed(payload, &mut collector)
+                    } else {
+                        execute(level, pipeline.as_ref(), payload)
+                    };
+                    frames.push((index, outcome, frame_start.elapsed().as_nanos()));
+                }
+                WorkerResult { frames, collector }
+            }));
+        }
+        barrier.wait();
+        handles
+            .into_iter()
+            .map(|handle| handle.join().map_err(|_| RunError::WorkerJoinFailure))
+            .collect::<Result<Vec<_>, _>>()
+    });
+    let elapsed_ns = start.elapsed().as_nanos();
+    let mut frames = Vec::with_capacity(measured_frames);
+    let mut collector = Collector::default();
+    for result in results? {
+        frames.extend(result.frames);
+        for (key, value) in result.collector.timings {
+            *collector.timings.entry(key).or_default() += value;
+        }
+        for (key, value) in result.collector.invocations {
+            *collector.invocations.entry(key).or_default() += value;
+        }
+        for (key, value) in result.collector.rejections {
+            *collector.rejections.entry(key).or_default() += value;
+        }
+        for (key, value) in result.collector.failures {
+            *collector.failures.entry(key).or_default() += value;
+        }
+    }
+    frames.sort_by_key(|(index, _, _)| *index);
+    let outcomes = frames.iter().map(|(_, outcome, _)| outcome.clone()).collect();
+    let samples = frames.iter().map(|(_, _, elapsed)| *elapsed).collect();
+    Ok((outcomes, samples, collector, elapsed_ns))
+}
+
 pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<RawRun, RunError> {
     if dataset.fixtures.is_empty()
-        || config.concurrency != 1
+        || config.concurrency == 0
         || config.repetitions == 0
         || config.measured_frames == 0
     {
@@ -175,20 +248,38 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
         collector.failures.insert(name.to_owned(), 0);
     }
     for repetition in 0..config.repetitions {
-        let mut samples = Vec::with_capacity(config.measured_frames);
-        let mut outcomes = Vec::with_capacity(config.measured_frames);
-        let start = Instant::now();
-        for index in 0..config.measured_frames {
-            let payload = &dataset.fixtures[index % dataset.fixtures.len()];
-            let frame_start = Instant::now();
-            outcomes.push(if level == Level::B2 {
-                pipeline.as_ref().unwrap().process_observed(payload, &mut collector)
-            } else {
-                execute(level, pipeline.as_ref(), payload)
-            });
-            samples.push(frame_start.elapsed().as_nanos());
-        }
-        let elapsed_ns = start.elapsed().as_nanos();
+        let (outcomes, mut samples, elapsed_ns) = if config.concurrency == 1 {
+            let mut samples = Vec::with_capacity(config.measured_frames);
+            let mut outcomes = Vec::with_capacity(config.measured_frames);
+            let start = Instant::now();
+            for index in 0..config.measured_frames {
+                let payload = &dataset.fixtures[index % dataset.fixtures.len()];
+                let frame_start = Instant::now();
+                outcomes.push(if level == Level::B2 {
+                    pipeline.as_ref().unwrap().process_observed(payload, &mut collector)
+                } else {
+                    execute(level, pipeline.as_ref(), payload)
+                });
+                samples.push(frame_start.elapsed().as_nanos());
+            }
+            (outcomes, samples, start.elapsed().as_nanos())
+        } else {
+            let (outcomes, samples, worker_collector, elapsed_ns) =
+                execute_parallel(level, dataset, config.measured_frames, config.concurrency)?;
+            for (key, value) in worker_collector.timings {
+                *collector.timings.entry(key).or_default() += value;
+            }
+            for (key, value) in worker_collector.invocations {
+                *collector.invocations.entry(key).or_default() += value;
+            }
+            for (key, value) in worker_collector.rejections {
+                *collector.rejections.entry(key).or_default() += value;
+            }
+            for (key, value) in worker_collector.failures {
+                *collector.failures.entry(key).or_default() += value;
+            }
+            (outcomes, samples, elapsed_ns)
+        };
         for (index, (outcome, expected)) in outcomes
             .iter()
             .zip(dataset.expected.iter().cycle())

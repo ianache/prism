@@ -4,7 +4,7 @@ use prism_bench::cli::parse_args;
 use prism_bench::dataset::Dataset;
 use prism_bench::metadata::Metadata;
 use prism_bench::output::{
-    workflow_tax_for_repetition, write_once_atomic, RawRecord,
+    workflow_tax_for_concurrency_repetition, write_once_atomic, RawRecord,
 };
 use prism_bench::runner::{run_level, Level, RawRun, RunConfig};
 
@@ -23,7 +23,9 @@ fn main() {
             std::process::exit(2);
         }
     };
-    let run_config = RunConfig {
+    let mut runs: Vec<(String, usize, RawRun)> = Vec::new();
+    for concurrency in &config.concurrencies {
+      let run_config = RunConfig {
         warmup: config.warmup,
         samples: config.samples,
         warmup_frames: config.warmup_frames,
@@ -32,10 +34,9 @@ fn main() {
         max_warmup_frames: config.max_warmup_frames,
         measured_frames: config.measured_frames,
         repetitions: config.repetitions,
-        concurrency: config.concurrency,
-    };
-    let mut runs: Vec<(String, RawRun)> = Vec::new();
-    for level_name in config.levels.split(',') {
+        concurrency: *concurrency,
+      };
+      for level_name in config.levels.split(',') {
         let level = match level_name {
             "b0" => Level::B0,
             "b1" => Level::B1,
@@ -43,28 +44,32 @@ fn main() {
             _ => unreachable!(),
         };
         match run_level(level, &dataset, &run_config) {
-            Ok(run) => runs.push((level_name.to_owned(), run)),
+            Ok(run) => runs.push((level_name.to_owned(), *concurrency, run)),
             Err(error) => {
                 eprintln!("benchmark invalid: {error:?}");
                 std::process::exit(2);
             }
         }
+      }
     }
-    let b0_p99_by_repetition = runs
+    let b0_p99_by_key = runs
         .iter()
-        .find(|(level, _)| level == "b0")
-        .map(|(_, run)| {
-            run.repetitions
-                .iter()
-                .map(|repetition| (repetition.repetition, repetition.p99_ns))
-                .collect::<Vec<_>>()
+        .filter(|(level, _, _)| level == "b0")
+        .flat_map(|(_, concurrency, run)| {
+            run.repetitions.iter().map(move |repetition| {
+                ((*concurrency, repetition.repetition), repetition.p99_ns)
+            })
         })
-        .unwrap_or_default();
-    let b1_p99_by_repetition = runs
+        .collect::<Vec<_>>();
+    let b1_p99_by_key = runs
         .iter()
-        .find(|(level, _)| level == "b1")
-        .map(|(_, run)| run.repetitions.iter().map(|r| (r.repetition, r.p99_ns)).collect::<Vec<_>>())
-        .unwrap_or_default();
+        .filter(|(level, _, _)| level == "b1")
+        .flat_map(|(_, concurrency, run)| {
+            run.repetitions.iter().map(move |repetition| {
+                ((*concurrency, repetition.repetition), repetition.p99_ns)
+            })
+        })
+        .collect::<Vec<_>>();
     let host = Metadata::collect(&config);
     let mut metadata = BTreeMap::new();
     metadata.insert("cpu_model".to_owned(), host.cpu_model);
@@ -82,14 +87,14 @@ fn main() {
     metadata.insert("command".to_owned(), host.command.clone());
     metadata.insert("run_id".to_owned(), host.run_id);
     let mut records = Vec::new();
-    for (level, run) in runs {
+    for (level, concurrency, run) in runs {
         for repetition in &run.repetitions {
             records.push(RawRecord {
-                run_id: format!("{}-{}-{}", config.scenario, level, repetition.repetition),
+                run_id: format!("{}-{}-c{}-r{}", config.scenario, level, concurrency, repetition.repetition),
                 implementation: "rust".into(),
                 level: level.clone(),
                 scenario: config.scenario.clone(),
-                concurrency: config.concurrency,
+                concurrency,
                 repetition: repetition.repetition,
                 p50_ns: repetition.p50_ns,
                 p95_ns: repetition.p95_ns,
@@ -122,10 +127,8 @@ fn main() {
                 workflow_tax_percent: if level == "b0" {
                     0.0
                 } else {
-                    workflow_tax_for_repetition(
-                        &b0_p99_by_repetition,
-                        repetition.repetition,
-                        repetition.p99_ns,
+                    workflow_tax_for_concurrency_repetition(
+                        &b0_p99_by_key, concurrency, repetition.repetition, repetition.p99_ns,
                     )
                 },
                 metadata: metadata.clone(),
@@ -137,7 +140,9 @@ fn main() {
                 filter_rejections: run.filter_rejections.clone(),
                 filter_execution_failures: run.filter_execution_failures.clone(),
                 observability_tax_percent: if level == "b2" {
-                    workflow_tax_for_repetition(&b1_p99_by_repetition, repetition.repetition, repetition.p99_ns)
+                    workflow_tax_for_concurrency_repetition(
+                        &b1_p99_by_key, concurrency, repetition.repetition, repetition.p99_ns,
+                    )
                 } else { 0.0 },
             });
         }
