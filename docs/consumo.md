@@ -1,6 +1,13 @@
 # Registro de consumo
 
-| 2026-09-13 | rust-s10-operational-lifecycle | plan y especificación S10 Operational Lifecycle | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Especificación aprobada y plan detallado creado; implementación pendiente. |
+| 2026-09-13 | rust-s10-operational-lifecycle | tarea 1: CLI y estados lifecycle | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Opciones sentinel/timeout y estados tipados implementados; contratos verdes. |
+| 2026-09-13 | rust-s10-operational-lifecycle | tarea 2: readiness y señal de shutdown | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Watcher portable, `STARTING`, `READY`, `DRAINING` y `STOPPED` verificados. |
+| 2026-09-13 | rust-s10-operational-lifecycle | tarea 3: integración con pool TCP | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Drain, deadline y `SERVER_DRAINING` integrados; S9 preservado. |
+| 2026-09-13 | rust-s10-operational-lifecycle | tarea 4: pruebas de drain y timeout | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | 2 pruebas lifecycle correctas; regresiones S7–S9 verdes. |
+| 2026-09-13 | rust-s10-operational-lifecycle | tarea 5: auditoría y evidencia final | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | 59 Rust + 43 Python verdes; evidencia documentada; sin claim P0. |
+| 2026-09-13 | rust-s10-operational-lifecycle | plan completo: Rust S10 Operational Lifecycle | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Lifecycle local controlado verificado con drain y timeout. |
+
+ | 2026-09-13 | rust-s10-operational-lifecycle | plan y especificación S10 Operational Lifecycle | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Especificación aprobada y plan detallado creado; implementación pendiente. |
 
  | 2026-09-13 | rust-s9-multiclient-backpressure | tarea 1: CLI de workers y cola | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Parámetros acotados, defaults S8 preservados y validación implementada. |
 | 2026-09-13 | rust-s9-multiclient-backpressure | tarea 2: pool de workers acotado | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Pool fijo, contador de capacidad y procesamiento serial por conexión implementados. |

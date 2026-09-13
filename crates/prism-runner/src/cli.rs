@@ -30,6 +30,8 @@ pub struct Args {
     pub listen: Option<String>,
     pub workers: usize,
     pub connection_queue: usize,
+    pub shutdown_file: Option<String>,
+    pub drain_timeout_ms: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,6 +55,8 @@ where
     let mut listen = None;
     let mut workers = 1usize;
     let mut connection_queue = 0usize;
+    let mut shutdown_file = None;
+    let mut drain_timeout_ms = 5_000usize;
     while let Some(arg) = iter.next() {
         match arg.as_str() {
             "--help" | "-h" => return Err(CliError::Help),
@@ -90,6 +94,20 @@ where
                         .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
                 )?;
             }
+            "--shutdown-file" => {
+                shutdown_file = Some(
+                    iter.next()
+                        .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
+                );
+            }
+            "--drain-timeout-ms" => {
+                drain_timeout_ms = parse_timeout(
+                    &arg,
+                    &iter
+                        .next()
+                        .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
+                )?;
+            }
             _ if arg.starts_with("--") => return Err(CliError::UnknownArgument(arg)),
             _ => return Err(CliError::UnknownArgument(arg)),
         }
@@ -100,7 +118,19 @@ where
         listen,
         workers,
         connection_queue,
+        shutdown_file,
+        drain_timeout_ms,
     })
+}
+
+fn parse_timeout(flag: &str, value: &str) -> Result<usize, CliError> {
+    let parsed = value
+        .parse::<usize>()
+        .map_err(|_| CliError::InvalidValue(flag.to_owned()))?;
+    if parsed == 0 || parsed > 600_000 {
+        return Err(CliError::InvalidValue(flag.to_owned()));
+    }
+    Ok(parsed)
 }
 
 fn parse_bounded_number(flag: &str, value: &str) -> Result<usize, CliError> {
@@ -114,5 +144,5 @@ fn parse_bounded_number(flag: &str, value: &str) -> Result<usize, CliError> {
 }
 
 pub fn usage() -> &'static str {
-    "usage: prism-run --route <b0|b1|b2> [--request-id-prefix <prefix>] [--listen <host:port>] [--workers <n>] [--connection-queue <n>]"
+    "usage: prism-run --route <b0|b1|b2> [--request-id-prefix <prefix>] [--listen <host:port>] [--workers <n>] [--connection-queue <n>] [--shutdown-file <path>] [--drain-timeout-ms <ms>]"
 }

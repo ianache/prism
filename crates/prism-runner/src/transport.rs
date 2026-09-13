@@ -1,7 +1,11 @@
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    mpsc, Arc, Mutex,
+};
 use std::thread;
+use std::time::{Duration, Instant};
 
 use crate::{output, process_line, Route};
 
@@ -40,9 +44,6 @@ fn read_bounded(reader: &mut impl BufRead) -> io::Result<Option<String>> {
     if bytes.is_empty() && !terminated {
         return Ok(None);
     }
-    if bytes.last() == Some(&b'\n') {
-        bytes.pop();
-    }
     if bytes.last() == Some(&b'\r') {
         bytes.pop();
     }
@@ -65,7 +66,12 @@ fn handle_connection(
     route: Route,
     prefix: &str,
     sequence: &mut usize,
+    shutdown: &Arc<AtomicBool>,
+    drain_deadline: &Arc<Mutex<Option<Instant>>>,
+    read_timeout: Duration,
 ) -> io::Result<()> {
+    stream.set_read_timeout(Some(read_timeout))?;
+    stream.set_write_timeout(Some(read_timeout))?;
     let mut reader = BufReader::new(stream.try_clone()?);
     let mut stream = stream;
     loop {
@@ -91,6 +97,21 @@ fn handle_connection(
                 )?;
                 return Ok(());
             }
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut
+                ) =>
+            {
+                let expired = drain_deadline
+                    .lock()
+                    .expect("deadline lock poisoned")
+                    .map(|deadline| Instant::now() >= deadline)
+                    .unwrap_or(false);
+                if shutdown.load(Ordering::Acquire) && expired {
+                    return Ok(());
+                }
+            }
             Err(error) => return Err(error),
         }
     }
@@ -103,6 +124,9 @@ pub fn capacity(workers: usize, queue: usize) -> usize {
 struct Job {
     stream: TcpStream,
     permits: Arc<Mutex<usize>>,
+    shutdown: Arc<AtomicBool>,
+    drain_deadline: Arc<Mutex<Option<Instant>>>,
+    read_timeout: Duration,
 }
 
 fn worker_loop(receiver: Arc<Mutex<mpsc::Receiver<Job>>>, route: Route, prefix: String) {
@@ -111,21 +135,26 @@ fn worker_loop(receiver: Arc<Mutex<mpsc::Receiver<Job>>>, route: Route, prefix: 
             Ok(job) => job,
             Err(_) => return,
         };
-        if let Err(error) = handle_connection(job.stream, route, &prefix, &mut 0usize) {
+        if let Err(error) = handle_connection(
+            job.stream,
+            route,
+            &prefix,
+            &mut 0usize,
+            &job.shutdown,
+            &job.drain_deadline,
+            job.read_timeout,
+        ) {
             eprintln!("connection failed: {error}");
         }
         *job.permits.lock().expect("capacity lock poisoned") += 1;
     }
 }
 
-fn reject_capacity(mut stream: TcpStream, route: Route) -> io::Result<()> {
-    let value = output::error(
-        "connection",
-        route.as_str(),
-        "CAPACITY_EXCEEDED",
-        "connection capacity is full",
-    );
-    write_line(&mut stream, &value)
+fn reject(mut stream: TcpStream, route: Route, code: &str, message: &str) -> io::Result<()> {
+    write_line(
+        &mut stream,
+        &output::error("connection", route.as_str(), code, message),
+    )
 }
 
 pub fn serve(
@@ -134,20 +163,45 @@ pub fn serve(
     prefix: &str,
     workers: usize,
     queue: usize,
+    shutdown: Arc<AtomicBool>,
+    drain_timeout: Duration,
 ) -> io::Result<()> {
-    eprintln!("LISTENING {}", listener.local_addr()?);
+    let address = listener.local_addr()?;
+    eprintln!("READY {}", address);
+    listener.set_nonblocking(true)?;
     let limit = capacity(workers, queue);
     let permits = Arc::new(Mutex::new(limit));
+    let drain_deadline = Arc::new(Mutex::new(None));
     let (sender, receiver) = mpsc::sync_channel(limit.max(1));
     let receiver = Arc::new(Mutex::new(receiver));
+    let read_timeout = Duration::from_millis(drain_timeout.as_millis().min(100).max(1) as u64);
+    let mut handles = Vec::new();
     for _ in 0..workers {
         let receiver = Arc::clone(&receiver);
         let prefix = prefix.to_owned();
-        thread::spawn(move || worker_loop(receiver, route, prefix));
+        handles.push(thread::spawn(move || worker_loop(receiver, route, prefix)));
     }
-    for incoming in listener.incoming() {
-        match incoming {
-            Ok(stream) => {
+    let mut deadline = None;
+    let mut draining = false;
+    loop {
+        if shutdown.load(Ordering::Acquire) && !draining {
+            eprintln!("DRAINING");
+            *drain_deadline.lock().expect("deadline lock poisoned") =
+                Some(Instant::now() + drain_timeout);
+            deadline = Some(Instant::now() + drain_timeout);
+            draining = true;
+        }
+        if draining {
+            if Instant::now() >= deadline.expect("drain deadline missing") {
+                break;
+            }
+        }
+        match listener.accept() {
+            Ok((stream, _)) => {
+                if draining || shutdown.load(Ordering::Acquire) {
+                    reject(stream, route, "SERVER_DRAINING", "server is draining")?;
+                    continue;
+                }
                 let admitted = {
                     let mut available = permits.lock().expect("capacity lock poisoned");
                     if *available == 0 {
@@ -158,18 +212,31 @@ pub fn serve(
                     }
                 };
                 if !admitted {
-                    reject_capacity(stream, route)?;
+                    reject(
+                        stream,
+                        route,
+                        "CAPACITY_EXCEEDED",
+                        "connection capacity is full",
+                    )?;
                     continue;
                 }
                 let job = Job {
                     stream,
                     permits: Arc::clone(&permits),
+                    shutdown: Arc::clone(&shutdown),
+                    drain_deadline: Arc::clone(&drain_deadline),
+                    read_timeout,
                 };
                 match sender.try_send(job) {
                     Ok(()) => {}
                     Err(mpsc::TrySendError::Full(job)) => {
                         *job.permits.lock().expect("capacity lock poisoned") += 1;
-                        reject_capacity(job.stream, route)?;
+                        reject(
+                            job.stream,
+                            route,
+                            "CAPACITY_EXCEEDED",
+                            "connection capacity is full",
+                        )?;
                     }
                     Err(mpsc::TrySendError::Disconnected(_)) => {
                         return Err(io::Error::new(
@@ -179,9 +246,20 @@ pub fn serve(
                     }
                 }
             }
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                thread::sleep(Duration::from_millis(20));
+            }
             Err(error) => return Err(error),
         }
     }
+    drop(sender);
+    let deadline = std::time::Instant::now() + drain_timeout;
+    for handle in handles {
+        if std::time::Instant::now() < deadline {
+            let _ = handle.join();
+        }
+    }
+    eprintln!("STOPPED");
     Ok(())
 }
 

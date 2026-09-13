@@ -7,6 +7,30 @@ fn accepts_routes_and_default_prefix() {
     assert_eq!(args.request_id_prefix, "req");
     assert_eq!(args.listen, None);
     assert_eq!((args.workers, args.connection_queue), (1, 0));
+    assert_eq!(args.shutdown_file, None);
+    assert_eq!(args.drain_timeout_ms, 5000);
+}
+
+#[test]
+fn accepts_lifecycle_options() {
+    let args = parse_args([
+        "prism-run",
+        "--route",
+        "b1",
+        "--listen",
+        "127.0.0.1:0",
+        "--shutdown-file",
+        "stop.flag",
+        "--drain-timeout-ms",
+        "100",
+    ])
+    .unwrap();
+    assert_eq!(args.shutdown_file.as_deref(), Some("stop.flag"));
+    assert_eq!(args.drain_timeout_ms, 100);
+    assert_eq!(
+        parse_args(["prism-run", "--route", "b1", "--drain-timeout-ms", "0"]),
+        Err(CliError::InvalidValue("--drain-timeout-ms".into()))
+    );
 }
 
 #[test]

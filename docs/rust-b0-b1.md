@@ -182,3 +182,21 @@ rtk proxy .\target\release\prism-run.exe --route b2 --listen 127.0.0.1:9000 --wo
 Cada conexión conserva su propio orden. Si los workers y la cola están llenos,
 la conexión adicional recibe `CAPACITY_EXCEEDED` y se cierra; el listener sigue
 activo y recupera capacidad cuando un cliente termina.
+
+## S10: lifecycle y shutdown controlado
+
+Inicia el listener con un archivo-sentinel administrado externamente:
+
+```powershell
+rtk proxy .\target\release\prism-run.exe --route b2 --listen 127.0.0.1:9000 --shutdown-file .\shutdown.flag --drain-timeout-ms 5000
+```
+
+Con `--shutdown-file`, el proceso informa `STARTING`, `READY`, `DRAINING` y `STOPPED` por stderr. Para
+solicitar apagado, crea el archivo desde otra terminal:
+
+```powershell
+New-Item .\shutdown.flag -ItemType File
+```
+
+El runner no elimina el sentinel. Deja de admitir trabajo nuevo, drena las
+conexiones existentes y termina dentro del timeout configurado.

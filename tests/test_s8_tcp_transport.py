@@ -36,18 +36,20 @@ class S8TcpTransportTests(unittest.TestCase):
                     address = process.stderr.readline().decode().strip().split()[-1]
                     host, port = address.rsplit(":", 1)
                     with socket.create_connection((host, int(port)), timeout=5) as client:
+                        reader = client.makefile("rb")
                         messages = [
                             {"request_id": "one", "payload_hex": payload_hex},
                             {"request_id": "bad", "payload_hex": "0"},
                             {"request_id": "two", "payload_hex": payload_hex},
                         ]
                         client.sendall(("\n".join(json.dumps(item) for item in messages) + "\n").encode())
-                        rows = [receive_line(client) for _ in messages]
+                        rows = [json.loads(reader.readline().decode()) for _ in messages]
                         self.assertEqual([row["request_id"] for row in rows], ["tcp-one", "tcp-2", "tcp-two"])
                         self.assertFalse(rows[1]["ok"])
                         self.assertEqual(rows[1]["error"]["code"], "INVALID_HEX")
                         if route == "b2":
                             self.assertEqual(rows[0]["observations"]["events"], 6)
+                        reader.close()
                     with socket.create_connection((host, int(port)), timeout=5) as second:
                         second.sendall((json.dumps({"request_id": "again", "payload_hex": payload_hex}) + "\n").encode())
                         self.assertEqual(receive_line(second)["request_id"], "tcp-again")
@@ -68,9 +70,11 @@ class S8TcpTransportTests(unittest.TestCase):
         try:
             host, port = process.stderr.readline().decode().strip().split()[-1].rsplit(":", 1)
             with socket.create_connection((host, int(port)), timeout=5) as client:
+                reader = client.makefile("rb")
                 client.sendall((b"x" * (64 * 1024 + 1)) + b"\n")
-                self.assertEqual(receive_line(client)["error"]["code"], "LINE_TOO_LARGE")
+                self.assertEqual(json.loads(reader.readline().decode())["error"]["code"], "LINE_TOO_LARGE")
                 self.assertEqual(client.recv(1), b"")
+                reader.close()
             self.assertIsNone(process.poll())
         finally:
             process.terminate()
