@@ -36,6 +36,9 @@ pub struct SustainedWindow {
     pub resource_before: ResourceSnapshot,
     pub resource_after: ResourceSnapshot,
     pub incomplete_tail_frames: usize,
+    pub window_started_ns: u128,
+    pub window_finished_ns: u128,
+    pub repetition_elapsed_ns: u128,
     pub execution_id: String,
     pub observability_variant: String,
     pub filter_timings_ns: std::collections::BTreeMap<String, u128>,
@@ -119,12 +122,15 @@ pub fn run_sustained(
     };
     let mut windows = Vec::new();
     for repetition in 1..=config.repetitions {
+        let repetition_started = Instant::now();
         let deadline = Instant::now() + std::time::Duration::from_secs(per_repetition);
         let mut window_index = 0;
         while Instant::now() < deadline || window_index == 0 {
             let before = snapshot();
             let run = run_level(level, dataset, &run_config)?;
             let after = snapshot();
+            let window_started_ns = before.sampled_at_ns;
+            let window_finished_ns = after.sampled_at_ns;
             let metrics = &run.repetitions[0];
             windows.push(SustainedWindow {
                 repetition,
@@ -145,6 +151,9 @@ pub fn run_sustained(
                 resource_before: before,
                 resource_after: after,
                 incomplete_tail_frames: 0,
+                window_started_ns,
+                window_finished_ns,
+                repetition_elapsed_ns: repetition_started.elapsed().as_nanos(),
                 execution_id: run.execution_id,
                 observability_variant: run.observability_variant,
                 filter_timings_ns: run.filter_timings_ns,
