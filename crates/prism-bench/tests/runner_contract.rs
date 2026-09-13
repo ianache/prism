@@ -2,7 +2,8 @@ use std::path::Path;
 
 use prism_bench::dataset::Dataset;
 use prism_bench::percentiles::percentile_nearest_rank_thousandths;
-use prism_bench::runner::{run_level, Level, RunConfig};
+use prism_bench::burst::{Calibration, Phase, PhaseSchedule};
+use prism_bench::runner::{run_level, run_phase, Level, RunConfig};
 
 #[test]
 fn nearest_rank_supports_p99_9() {
@@ -76,4 +77,20 @@ fn b2_parallel_run_returns_complete_owned_filter_evidence() {
     assert_eq!(run.correctness_matches, 16);
     assert_eq!(run.filter_invocations.len(), 6);
     assert!(run.filter_invocations.values().sum::<usize>() >= 16);
+}
+
+#[test]
+fn phase_runner_preserves_order_correctness_and_lateness_accounting() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/p0-smoke");
+    let dataset = Dataset::load(&root).unwrap();
+    let config = parallel_config(1);
+    let calibration = Calibration::from_throughputs(&[1_000_000_000.0; 5]).unwrap();
+    let schedule = PhaseSchedule::new(&calibration, Phase::Burst, 16).unwrap();
+    let phase = run_phase(Level::B2, &dataset, &config, &schedule).unwrap();
+    assert_eq!(phase.phase, Phase::Burst);
+    assert_eq!(phase.frames, 16);
+    assert_eq!(phase.correctness_matches, 16);
+    assert_eq!(phase.late_frames + phase.on_time_frames, 16);
+    assert!(phase.late_frames > 0);
+    assert_eq!(phase.filter_invocations.len(), 6);
 }

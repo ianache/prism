@@ -101,7 +101,7 @@ where
     if dataset.is_none() || metadata.iter().any(Option::is_none) {
         return Err(CliError::MissingMetadata);
     }
-    if scenario != "S1" && scenario != "S2" && scenario != "S3" {
+    if scenario != "S1" && scenario != "S2" && scenario != "S3" && scenario != "S4" {
         return Err(CliError::InvalidScenario);
     }
     if levels.split(',').any(|level| !matches!(level, "b0" | "b1" | "b2")) {
@@ -137,6 +137,14 @@ where
         return Err(CliError::MissingValue);
     }
     if scenario == "S3" && (samples != 100_000 || concurrencies != allowed_concurrencies) {
+        return Err(CliError::MissingValue);
+    }
+    if scenario == "S4"
+        && (samples != 100_000
+            || concurrencies != [1]
+            || levels.split(',').collect::<std::collections::BTreeSet<_>>()
+                != ["b0", "b1", "b2"].into_iter().collect())
+    {
         return Err(CliError::MissingValue);
     }
     Ok(Config {

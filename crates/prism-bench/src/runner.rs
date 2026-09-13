@@ -4,6 +4,7 @@ use std::time::Instant;
 
 use prism_runtime::{b0, b1::{FilterId, ObservationOutcome, Observer, Pipeline}, Outcome};
 
+use crate::burst::{Phase, PhaseSchedule};
 use crate::dataset::Dataset;
 use crate::percentiles::percentile_nearest_rank_thousandths;
 
@@ -58,6 +59,36 @@ pub struct RawRun {
     pub frames_per_sec: f64,
     pub mb_per_sec: f64,
     pub repetitions: Vec<RepetitionMetrics>,
+    pub correctness_total: usize,
+    pub correctness_matches: usize,
+    pub typed_rejections: usize,
+    pub execution_failures: usize,
+    pub observability_variant: String,
+    pub execution_id: String,
+    pub filter_timings_ns: BTreeMap<String, u128>,
+    pub filter_invocations: BTreeMap<String, usize>,
+    pub filter_rejections: BTreeMap<String, usize>,
+    pub filter_execution_failures: BTreeMap<String, usize>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PhaseRun {
+    pub phase: Phase,
+    pub frames: usize,
+    pub elapsed_ns: u128,
+    pub p50_ns: u128,
+    pub p95_ns: u128,
+    pub p99_ns: u128,
+    pub p99_9_ns: u128,
+    pub max_ns: u128,
+    pub frames_per_sec: f64,
+    pub mb_per_sec: f64,
+    pub offered_frames_per_sec: f64,
+    pub late_frames: usize,
+    pub on_time_frames: usize,
+    pub lateness_p50_ns: u128,
+    pub lateness_p95_ns: u128,
+    pub lateness_p99_ns: u128,
     pub correctness_total: usize,
     pub correctness_matches: usize,
     pub typed_rejections: usize,
@@ -352,6 +383,80 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
         filter_timings_ns: collector.timings,
         filter_invocations: collector.invocations,
         filter_rejections: collector.rejections,
+        filter_execution_failures: collector.failures,
+    })
+}
+
+pub fn run_phase(
+    level: Level,
+    dataset: &Dataset,
+    config: &RunConfig,
+    schedule: &PhaseSchedule,
+) -> Result<PhaseRun, RunError> {
+    if dataset.fixtures.is_empty() || config.concurrency != 1 || schedule.frames() != config.measured_frames {
+        return Err(RunError::InvalidConfig);
+    }
+    let pipeline = (level != Level::B0).then(|| Pipeline::new().expect("static B1 registry"));
+    let mut collector = Collector::default();
+    for name in ["F1", "F2", "F3", "F4", "F5", "F6"] {
+        collector.timings.insert(name.to_owned(), 0);
+        collector.invocations.insert(name.to_owned(), 0);
+        collector.rejections.insert(name.to_owned(), 0);
+        collector.failures.insert(name.to_owned(), 0);
+    }
+    for index in 0..config.warmup {
+        let payload = &dataset.fixtures[index % dataset.fixtures.len()];
+        let _ = execute(level, pipeline.as_ref(), payload);
+    }
+    let mut samples = Vec::with_capacity(config.measured_frames);
+    let mut lateness = Vec::with_capacity(config.measured_frames);
+    let mut outcomes = Vec::with_capacity(config.measured_frames);
+    let phase_start = Instant::now();
+    for index in 0..config.measured_frames {
+        let scheduled = schedule.arrival_offset_ns(index);
+        let started = phase_start.elapsed().as_nanos();
+        lateness.push(started.saturating_sub(scheduled));
+        let payload = &dataset.fixtures[index % dataset.fixtures.len()];
+        let frame_start = Instant::now();
+        outcomes.push(if level == Level::B2 {
+            pipeline.as_ref().unwrap().process_observed(payload, &mut collector)
+        } else {
+            execute(level, pipeline.as_ref(), payload)
+        });
+        samples.push(frame_start.elapsed().as_nanos());
+    }
+    let elapsed_ns = phase_start.elapsed().as_nanos();
+    let mut correctness_matches = 0;
+    let mut typed_rejections = 0;
+    let mut execution_failures = 0;
+    for (index, (outcome, expected)) in outcomes.iter().zip(dataset.expected.iter().cycle()).enumerate() {
+        match outcome {
+            Outcome::Rejected(_) => typed_rejections += 1,
+            Outcome::ExecutionFailure(_) => execution_failures += 1,
+            Outcome::Normalized(_) => {}
+        }
+        if serialize(outcome) == *expected {
+            correctness_matches += 1;
+        } else {
+            return Err(RunError::CorrectnessMismatch { frame: index });
+        }
+    }
+    let frames = config.measured_frames;
+    let (p50, p95, p99, p99_9, max) = percentile_set(&mut samples);
+    let (late_p50, late_p95, late_p99, _, _) = percentile_set(&mut lateness);
+    let late_frames = lateness.iter().filter(|value| **value > 0).count();
+    let seconds = elapsed_ns as f64 / 1_000_000_000.0;
+    let bytes = (0..frames).map(|index| dataset.fixtures[index % dataset.fixtures.len()].len()).sum::<usize>();
+    Ok(PhaseRun {
+        phase: schedule.phase(), frames, elapsed_ns, p50_ns: p50, p95_ns: p95, p99_ns: p99, p99_9_ns: p99_9, max_ns: max,
+        frames_per_sec: frames as f64 / seconds.max(f64::MIN_POSITIVE),
+        mb_per_sec: bytes as f64 / 1_000_000.0 / seconds.max(f64::MIN_POSITIVE),
+        offered_frames_per_sec: schedule.offered_frames_per_sec(), late_frames, on_time_frames: frames - late_frames,
+        lateness_p50_ns: late_p50, lateness_p95_ns: late_p95, lateness_p99_ns: late_p99,
+        correctness_total: frames, correctness_matches, typed_rejections, execution_failures,
+        observability_variant: if level == Level::B2 { "local_metrics".into() } else { "none".into() },
+        execution_id: format!("S4-{}", schedule.phase().as_str()), filter_timings_ns: collector.timings,
+        filter_invocations: collector.invocations, filter_rejections: collector.rejections,
         filter_execution_failures: collector.failures,
     })
 }
