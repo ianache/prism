@@ -125,14 +125,14 @@
 - Exact command uses `--scenario S3 --levels b0,b1,b2 --concurrency 1,2,4,8,16,32,64 --warmup 10000 --samples 100000 --repetitions 5` plus explicit host metadata.
 - Final package passes `audit-rust-s3.py` and contains 105 records.
 
-- [ ] Run Rust workspace tests, all Python audit suites, S3 protocol tests, and focused concurrency contracts before the external run.
-- [ ] Execute the combined Rust S3 benchmark against `D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k` using all seven concurrency values and a new immutable output path.
-- [ ] Parse every JSONL line with `json.loads`, verify the 105 unique tuples, and run `audit-rust-s3.py`.
-- [ ] Verify correctness, per-concurrency p99 taxes, throughput, latency percentiles, dataset digest, B2 F1–F6 counts, and host metadata.
-- [ ] Document command, digest, output path, scaling observations, limitations, and explicit non-qualification status.
-- [ ] Run the final Rust/Python suites, `git diff --check`, `git status --short`, and `git ls-files '*100k*'`; confirm no binary fixture is tracked.
-- [ ] Mark all completed plan steps, append one row per task plus the final plan row to `docs/consumo.md`, and commit with `docs: finalize S3 concurrency increment`.
-- [ ] Merge and publish only after the final verification is green; report commit and evidence paths without claiming P0 qualification.
+- [x] Run Rust workspace tests, all Python audit suites, S3 protocol tests, and focused concurrency contracts before the external run.
+- [x] Execute the combined Rust S3 benchmark against `D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k` using all seven concurrency values and a new immutable output path.
+- [x] Parse every JSONL line with `json.loads`, verify the 105 unique tuples, and run `audit-rust-s3.py`.
+- [x] Verify correctness, per-concurrency p99 taxes, throughput, latency percentiles, dataset digest, B2 F1–F6 counts, and host metadata.
+- [x] Document command, digest, output path, scaling observations, limitations, and explicit non-qualification status.
+- [x] Run the final Rust/Python suites, `git diff --check`, `git status --short`, and `git ls-files '*100k*'`; confirm no binary fixture is tracked.
+- [x] Mark all completed plan steps, append one row per task plus the final plan row to `docs/consumo.md`, and commit with `docs: finalize S3 concurrency increment`.
+- [x] Merge and publish only after the final verification is green; report commit and evidence paths without claiming P0 qualification.
 
 ## Final Verification
 

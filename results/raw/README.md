@@ -10,3 +10,9 @@ The audit requires five repetitions for each of B0 and B1, matching dataset
 identity and digest, complete protocol evidence, correctness, convergence, and
 per-repetition workflow-tax arithmetic. The 100K binary fixtures remain
 outside Git.
+
+S3 external evidence: `D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k-s3.jsonl`.
+SHA-256: `7BC5D384ADD138D69C83AF49684715A71BED501CBFDB60BA23BCFA99459156F4`.
+The package has 105 JSONL records, five repetitions for each B0/B1/B2 and
+each concurrency in `1,2,4,8,16,32,64`; it remains outside Git and is audited
+with `scripts/audit-rust-s3.py`.
