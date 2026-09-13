@@ -47,6 +47,8 @@ def main():
             value = row.get(name)
             if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) or value < 0:
                 fail(f"invalid metric: {name}")
+        if not isinstance(row.get("duration_seconds"), (int, float)) or not math.isfinite(row["duration_seconds"]) or row["duration_seconds"] <= 0:
+            fail("invalid duration_seconds")
         for name in ("rss_before_bytes", "rss_after_bytes"):
             value = row.get(name)
             if value != "N/D" and (not isinstance(value, int) or value < 0):
@@ -60,15 +62,20 @@ def main():
     for group in grouped.values():
         if [row["window_index"] for row in group] != list(range(len(group))):
             fail("non-contiguous window indices")
+    for repetition in REPETITIONS:
+        key_sets = [set(row["window_index"] for row in grouped[(level, repetition)]) for level in LEVELS]
+        if not (key_sets[0] & key_sets[1] & key_sets[2]):
+            fail("no common level window")
     indexed = {(row["level"], row["repetition"], row["window_index"]): row for row in rows}
+    gate_failures = []
     for level in LEVELS:
         for repetition in REPETITIONS:
             group = grouped[(level, repetition)]
             first, last = group[0], group[-1]
             if last["p99_ns"] > first["p99_ns"] * 1.10:
-                fail("p99 stability gate failed")
+                gate_failures.append(f"p99:{level}:r{repetition}")
             if first["rss_before_bytes"] != "N/D" and last["rss_after_bytes"] != "N/D" and last["rss_after_bytes"] > first["rss_before_bytes"] * 1.10:
-                fail("RSS growth gate failed")
+                gate_failures.append(f"rss:{level}:r{repetition}")
     for key, b0 in list(indexed.items()):
         level, repetition, window = key
         if level == "b0":
@@ -78,7 +85,8 @@ def main():
                 fail("workflow tax mismatch")
             if b1 and b2 and not math.isclose(b2.get("observability_tax_percent", 0.0), tax(b1["p99_ns"], b2["p99_ns"]), rel_tol=1e-9, abs_tol=1e-9):
                 fail("observability tax mismatch")
-    print(f"ok levels=b0,b1,b2 repetitions=5 frames=100000 windows={len(rows)}")
+    suffix = " gate_failures=" + ",".join(gate_failures) if gate_failures else " gates=pass"
+    print(f"ok levels=b0,b1,b2 repetitions=5 frames=100000 windows={len(rows)}{suffix}")
 
 
 if __name__ == "__main__":

@@ -92,9 +92,10 @@ resource values that cannot be collected are emitted as `N/D`.
 
 ## S5
 
-S5 ejecuta B0/B1/B2 en cinco repeticiones secuenciales. Cada repetición usa
-un presupuesto de 180 segundos dentro de una duración total predeterminada de
-900 segundos y emite ventanas completas de exactamente 100.000 frames. La
+S5 ejecuta B0/B1/B2 en cinco repeticiones secuenciales. El presupuesto total
+predeterminado es de 900 segundos, dividido entre tres niveles y cinco
+repeticiones (60 segundos por nivel/repetición), y emite ventanas completas de
+exactamente 100.000 frames. La
 ventana final incompleta se informa y no se incluye en la evidencia comparable.
 
 ```text
