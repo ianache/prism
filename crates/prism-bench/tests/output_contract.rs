@@ -1,7 +1,9 @@
 use std::collections::BTreeMap;
 use std::fs;
 
-use prism_bench::output::{workflow_tax_percent, write_once_atomic, OutputError, RawRecord};
+use prism_bench::output::{
+    workflow_tax_for_repetition, workflow_tax_percent, write_once_atomic, OutputError, RawRecord,
+};
 
 fn record() -> RawRecord {
     RawRecord {
@@ -20,6 +22,24 @@ fn record() -> RawRecord {
         mb_per_sec: 1.0,
         correctness_total: 10,
         correctness_matches: 10,
+        timestamp_utc: "2026-09-12T00:00:00Z".into(),
+        dataset_id: "prism.telemetry.p0.v1".into(),
+        fixture_count: 10,
+        payload_class_105: 4,
+        payload_class_249: 3,
+        payload_class_501: 3,
+        valid_count: 8,
+        invalid_count: 1,
+        edge_complex_count: 1,
+        warmup_target: 10_000,
+        warmup_frames: 12_000,
+        convergence_window: 1_000,
+        convergence_threshold_percent: 5,
+        converged: true,
+        measured_frames: 10,
+        typed_rejections: 1,
+        execution_failures: 0,
+        command: "bench --scenario S1".into(),
         dataset_digest: "abc".into(),
         workflow_tax_percent: -10.0,
         metadata: BTreeMap::new(),
@@ -29,6 +49,12 @@ fn record() -> RawRecord {
 #[test]
 fn workflow_tax_retains_negative_values() {
     assert_eq!(workflow_tax_percent(100, 90), -10.0);
+}
+
+#[test]
+fn workflow_tax_uses_the_matching_baseline_repetition() {
+    let baselines = [(1, 100), (2, 200)];
+    assert_eq!(workflow_tax_for_repetition(&baselines, 2, 220), 10.0);
 }
 
 #[test]
@@ -42,6 +68,14 @@ fn raw_record_serializes_required_metrics() {
         "mb_per_sec",
         "dataset_digest",
         "workflow_tax_percent",
+        "timestamp_utc",
+        "dataset_id",
+        "fixture_count",
+        "warmup_target",
+        "converged",
+        "typed_rejections",
+        "execution_failures",
+        "command",
     ] {
         assert!(json.contains(&format!("\"{key}\"")), "missing {key}");
     }

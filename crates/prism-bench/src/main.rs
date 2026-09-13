@@ -3,7 +3,9 @@ use std::collections::BTreeMap;
 use prism_bench::cli::parse_args;
 use prism_bench::dataset::Dataset;
 use prism_bench::metadata::Metadata;
-use prism_bench::output::{workflow_tax_percent, write_once_atomic, RawRecord};
+use prism_bench::output::{
+    workflow_tax_for_repetition, write_once_atomic, RawRecord,
+};
 use prism_bench::runner::{run_level, Level, RawRun, RunConfig};
 
 fn main() {
@@ -47,11 +49,16 @@ fn main() {
             }
         }
     }
-    let b0_p99 = runs
+    let b0_p99_by_repetition = runs
         .iter()
         .find(|(level, _)| level == "b0")
-        .map(|(_, run)| run.p99_ns)
-        .unwrap_or(0);
+        .map(|(_, run)| {
+            run.repetitions
+                .iter()
+                .map(|repetition| (repetition.repetition, repetition.p99_ns))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     let host = Metadata::collect(&config);
     let mut metadata = BTreeMap::new();
     metadata.insert("cpu_model".to_owned(), host.cpu_model);
@@ -66,7 +73,7 @@ fn main() {
     metadata.insert("container_limits".to_owned(), host.container_limits);
     metadata.insert("affinity".to_owned(), host.affinity);
     metadata.insert("commit".to_owned(), host.commit);
-    metadata.insert("command".to_owned(), host.command);
+    metadata.insert("command".to_owned(), host.command.clone());
     metadata.insert("run_id".to_owned(), host.run_id);
     let mut records = Vec::new();
     for (level, run) in runs {
@@ -87,11 +94,33 @@ fn main() {
                 mb_per_sec: repetition.mb_per_sec,
                 correctness_total: run.correctness_total,
                 correctness_matches: run.correctness_matches,
+                timestamp_utc: host.timestamp_utc.clone(),
+                dataset_id: dataset.dataset_id.clone(),
+                fixture_count: dataset.fixture_count,
+                payload_class_105: dataset.payload_counts.class_105,
+                payload_class_249: dataset.payload_counts.class_249,
+                payload_class_501: dataset.payload_counts.class_501,
+                valid_count: dataset.validity_counts.valid,
+                invalid_count: dataset.validity_counts.invalid,
+                edge_complex_count: dataset.validity_counts.edge_complex,
+                warmup_target: run.warmup_target,
+                warmup_frames: run.warmup_frames,
+                convergence_window: run.convergence_window,
+                convergence_threshold_percent: run.convergence_threshold_percent,
+                converged: run.converged,
+                measured_frames: run.measured_frames,
+                typed_rejections: run.typed_rejections,
+                execution_failures: run.execution_failures,
+                command: host.command.clone(),
                 dataset_digest: dataset.manifest_digest.clone(),
                 workflow_tax_percent: if level == "b0" {
                     0.0
                 } else {
-                    workflow_tax_percent(b0_p99, repetition.p99_ns)
+                    workflow_tax_for_repetition(
+                        &b0_p99_by_repetition,
+                        repetition.repetition,
+                        repetition.p99_ns,
+                    )
                 },
                 metadata: metadata.clone(),
             });

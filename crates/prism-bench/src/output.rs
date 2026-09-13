@@ -20,6 +20,24 @@ pub struct RawRecord {
     pub mb_per_sec: f64,
     pub correctness_total: usize,
     pub correctness_matches: usize,
+    pub timestamp_utc: String,
+    pub dataset_id: String,
+    pub fixture_count: usize,
+    pub payload_class_105: usize,
+    pub payload_class_249: usize,
+    pub payload_class_501: usize,
+    pub valid_count: usize,
+    pub invalid_count: usize,
+    pub edge_complex_count: usize,
+    pub warmup_target: usize,
+    pub warmup_frames: usize,
+    pub convergence_window: usize,
+    pub convergence_threshold_percent: u32,
+    pub converged: bool,
+    pub measured_frames: usize,
+    pub typed_rejections: usize,
+    pub execution_failures: usize,
+    pub command: String,
     pub dataset_digest: String,
     pub workflow_tax_percent: f64,
     pub metadata: BTreeMap<String, String>,
@@ -40,7 +58,7 @@ impl RawRecord {
             .map(|(key, value)| format!("\"{}\":\"{}\"", escape(key), escape(value)))
             .collect::<Vec<_>>()
             .join(",");
-        format!("{{\"concurrency\":{},\"correctness_matches\":{},\"correctness_total\":{},\"dataset_digest\":\"{}\",\"frames_per_sec\":{},\"implementation\":\"{}\",\"level\":\"{}\",\"max_ns\":{},\"mb_per_sec\":{},\"metadata\":{{{}}},\"p50_ns\":{},\"p95_ns\":{},\"p99_9_ns\":{},\"p99_ns\":{},\"repetition\":{},\"run_id\":\"{}\",\"scenario\":\"{}\",\"workflow_tax_percent\":{}}}", self.concurrency, self.correctness_matches, self.correctness_total, escape(&self.dataset_digest), self.frames_per_sec, escape(&self.implementation), escape(&self.level), self.max_ns, self.mb_per_sec, metadata, self.p50_ns, self.p95_ns, self.p99_9_ns, self.p99_ns, self.repetition, escape(&self.run_id), escape(&self.scenario), self.workflow_tax_percent)
+        format!("{{\"command\":\"{}\",\"concurrency\":{},\"correctness_matches\":{},\"correctness_total\":{},\"converged\":{},\"convergence_threshold_percent\":{},\"convergence_window\":{},\"dataset_digest\":\"{}\",\"dataset_id\":\"{}\",\"edge_complex_count\":{},\"execution_failures\":{},\"fixture_count\":{},\"frames_per_sec\":{},\"implementation\":\"{}\",\"invalid_count\":{},\"level\":\"{}\",\"max_ns\":{},\"mb_per_sec\":{},\"measured_frames\":{},\"metadata\":{{{}}},\"p50_ns\":{},\"p95_ns\":{},\"p99_9_ns\":{},\"p99_ns\":{},\"payload_class_105\":{},\"payload_class_249\":{},\"payload_class_501\":{},\"repetition\":{},\"run_id\":\"{}\",\"scenario\":\"{}\",\"timestamp_utc\":\"{}\",\"typed_rejections\":{},\"valid_count\":{},\"warmup_frames\":{},\"warmup_target\":{},\"workflow_tax_percent\":{}}}", escape(&self.command), self.concurrency, self.correctness_matches, self.correctness_total, self.converged, self.convergence_threshold_percent, self.convergence_window, escape(&self.dataset_digest), escape(&self.dataset_id), self.edge_complex_count, self.execution_failures, self.fixture_count, self.frames_per_sec, escape(&self.implementation), self.invalid_count, escape(&self.level), self.max_ns, self.mb_per_sec, self.measured_frames, metadata, self.p50_ns, self.p95_ns, self.p99_9_ns, self.p99_ns, self.payload_class_105, self.payload_class_249, self.payload_class_501, self.repetition, escape(&self.run_id), escape(&self.scenario), escape(&self.timestamp_utc), self.typed_rejections, self.valid_count, self.warmup_frames, self.warmup_target, self.workflow_tax_percent)
     }
 }
 
@@ -55,6 +73,17 @@ pub fn workflow_tax_percent(base_p99: u128, compared_p99: u128) -> f64 {
         return 0.0;
     }
     (compared_p99 as f64 - base_p99 as f64) / base_p99 as f64 * 100.0
+}
+
+pub fn workflow_tax_for_repetition(
+    baselines: &[(usize, u128)],
+    repetition: usize,
+    compared_p99: u128,
+) -> f64 {
+    baselines
+        .iter()
+        .find(|(baseline_repetition, _)| *baseline_repetition == repetition)
+        .map_or(0.0, |(_, base_p99)| workflow_tax_percent(*base_p99, compared_p99))
 }
 
 pub fn write_once_atomic(path: &Path, records: &[RawRecord]) -> Result<(), OutputError> {

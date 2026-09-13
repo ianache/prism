@@ -44,6 +44,12 @@ python scripts/audit-rust-s1.py \
   --raw D:\02-PERSONAL\TOOLS\prism-datasets\p0-100k-s1.jsonl
 ```
 
+After changing the runner or raw-record schema, write a new JSONL path (raw
+outputs are immutable) and audit that new path. The audit is intentionally
+limited to the external 100K corpus; for the 300-fixture smoke output, parse
+each JSONL line with `python -c "import json,sys; [json.loads(line) for
+line in open(sys.argv[1], encoding='utf-8') if line.strip()]" <raw.jsonl>`.
+
 La prueba Rust de conteo es opt-in mediante `PRISM_100K_DATASET`; sin esa
 variable el contrato no carga el corpus pesado. La auditoría S1 exige diez
 filas (cinco repeticiones para B0 y B1), digest coincidente, corrección total
@@ -55,3 +61,6 @@ La ejecución validada produjo 10 filas, 100.000 fixtures y digest
 S1 es evidencia de ingeniería y no constituye una calificación P0. El release
 externo de 1,000,000 de archivos individuales permanece pendiente y fuera de
 Git.
+
+The evidence package does not claim P0, B2/B3, or S2–S5 qualification. Host
+resource values that cannot be collected are emitted as `N/D`.

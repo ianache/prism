@@ -41,6 +41,12 @@ pub struct RepetitionMetrics {
 pub struct RawRun {
     pub level: Level,
     pub samples: usize,
+    pub warmup_target: usize,
+    pub warmup_frames: usize,
+    pub convergence_window: usize,
+    pub convergence_threshold_percent: u32,
+    pub converged: bool,
+    pub measured_frames: usize,
     pub p50_ns: u128,
     pub p95_ns: u128,
     pub p99_ns: u128,
@@ -51,6 +57,8 @@ pub struct RawRun {
     pub repetitions: Vec<RepetitionMetrics>,
     pub correctness_total: usize,
     pub correctness_matches: usize,
+    pub typed_rejections: usize,
+    pub execution_failures: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -126,6 +134,8 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
     let mut repetitions = Vec::with_capacity(config.repetitions);
     let mut correctness_matches = 0usize;
     let mut correctness_total = 0usize;
+    let mut typed_rejections = 0usize;
+    let mut execution_failures = 0usize;
     for repetition in 0..config.repetitions {
         let mut samples = Vec::with_capacity(config.measured_frames);
         let mut outcomes = Vec::with_capacity(config.measured_frames);
@@ -144,6 +154,11 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
             .enumerate()
         {
             correctness_total += 1;
+            match outcome {
+                Outcome::Rejected(_) => typed_rejections += 1,
+                Outcome::ExecutionFailure(_) => execution_failures += 1,
+                Outcome::Normalized(_) => {}
+            }
             if serialize(outcome) == *expected {
                 correctness_matches += 1;
             } else {
@@ -180,6 +195,12 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
     Ok(RawRun {
         level,
         samples: config.measured_frames,
+        warmup_target,
+        warmup_frames: warmed,
+        convergence_window: config.convergence_window,
+        convergence_threshold_percent: config.convergence_threshold_percent,
+        converged,
+        measured_frames: config.measured_frames,
         p50_ns: p50,
         p95_ns: p95,
         p99_ns: p99,
@@ -191,6 +212,8 @@ pub fn run_level(level: Level, dataset: &Dataset, config: &RunConfig) -> Result<
         repetitions,
         correctness_total,
         correctness_matches,
+        typed_rejections,
+        execution_failures,
     })
 }
 
