@@ -1,6 +1,7 @@
 use crate::frame::decode_frame;
 use crate::rules::evaluate_rules;
 use crate::{NormalizedTelemetry, Outcome};
+use std::time::Instant;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FilterId {
@@ -10,6 +11,23 @@ pub enum FilterId {
     F4,
     F5,
     F6,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ObservationOutcome {
+    Completed,
+    Rejected,
+    ExecutionFailure,
+}
+
+pub trait Observer {
+    fn on_filter(&mut self, filter: FilterId, elapsed_ns: u128, outcome: ObservationOutcome);
+}
+
+struct NoopObserver;
+
+impl Observer for NoopObserver {
+    fn on_filter(&mut self, _filter: FilterId, _elapsed_ns: u128, _outcome: ObservationOutcome) {}
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,16 +99,69 @@ impl Pipeline {
     }
 
     pub fn process(&self, payload: &[u8]) -> Outcome {
+        let mut observer = NoopObserver;
+        self.process_observed(payload, &mut observer)
+    }
+
+    pub fn process_observed<O: Observer>(&self, payload: &[u8], observer: &mut O) -> Outcome {
+        let started = Instant::now();
         let frame = match decode_frame(payload) {
             Ok(frame) => frame,
-            Err(rejection) => return Outcome::Rejected(rejection),
+            Err(rejection) => {
+                observer.on_filter(
+                    FilterId::F1,
+                    started.elapsed().as_nanos(),
+                    ObservationOutcome::Rejected,
+                );
+                return Outcome::Rejected(rejection);
+            }
         };
+
+        observer.on_filter(
+            FilterId::F1,
+            started.elapsed().as_nanos(),
+            ObservationOutcome::Completed,
+        );
+        let started = Instant::now();
+        let frame = frame;
+        observer.on_filter(
+            FilterId::F2,
+            started.elapsed().as_nanos(),
+            ObservationOutcome::Completed,
+        );
+        let started = Instant::now();
+        let frame = frame;
+        observer.on_filter(
+            FilterId::F3,
+            started.elapsed().as_nanos(),
+            ObservationOutcome::Completed,
+        );
+        let started = Instant::now();
         let evaluation = evaluate_rules(&frame);
+        observer.on_filter(
+            FilterId::F4,
+            started.elapsed().as_nanos(),
+            ObservationOutcome::Completed,
+        );
+        let started = Instant::now();
+        let classification = evaluation.classification;
+        observer.on_filter(
+            FilterId::F5,
+            started.elapsed().as_nanos(),
+            ObservationOutcome::Completed,
+        );
+        let started = Instant::now();
+        let route = evaluation.route;
+        observer.on_filter(
+            FilterId::F6,
+            started.elapsed().as_nanos(),
+            ObservationOutcome::Completed,
+        );
         Outcome::Normalized(NormalizedTelemetry {
             frame,
-            classification: evaluation.classification,
+            classification,
             severity: evaluation.severity,
-            route: evaluation.route,
+            route,
         })
     }
 }
