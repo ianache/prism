@@ -51,6 +51,8 @@ fn s5_record(config: &prism_bench::cli::Config, dataset: &Dataset, host: &Metada
         phase: format!("window-{}", window.window_index), offered_frames_per_sec: window.frames_per_sec, processed_frames_per_sec: window.frames_per_sec, late_frames: 0, on_time_frames: window.measured_frames, lateness_p50_ns: 0, lateness_p95_ns: 0, lateness_p99_ns: 0, calibration_median_frames_per_sec: 0.0, baseline_frames_per_sec: 0.0, burst_frames_per_sec: 0.0,
         window_index: window.window_index, duration_seconds: window.duration_seconds, rss_before_bytes: window.resource_before.rss_bytes, rss_after_bytes: window.resource_after.rss_bytes, incomplete_tail_frames: window.incomplete_tail_frames,
         window_started_ns: window.window_started_ns, window_finished_ns: window.window_finished_ns, repetition_elapsed_ns: window.repetition_elapsed_ns,
+        process_cpu_before_ns: window.resource_before.process_cpu_ns, process_cpu_after_ns: window.resource_after.process_cpu_ns,
+        system_cpu_before_ns: window.resource_before.system_cpu_ns, system_cpu_after_ns: window.resource_after.system_cpu_ns,
     }
 }
 
@@ -128,6 +130,7 @@ fn run_s4(config: &prism_bench::cli::Config, dataset: &Dataset) {
             burst_frames_per_sec: calibration.burst_frames_per_sec,
             window_index: 0, duration_seconds: 0.0, rss_before_bytes: None, rss_after_bytes: None,
             incomplete_tail_frames: 0, window_started_ns: 0, window_finished_ns: 0, repetition_elapsed_ns: 0,
+            process_cpu_before_ns: None, process_cpu_after_ns: None, system_cpu_before_ns: None, system_cpu_after_ns: None,
         });
     }
     if let Err(error) = write_once_atomic(std::path::Path::new(&config.output), &records) {
@@ -286,6 +289,7 @@ fn main() {
                 burst_frames_per_sec: 0.0,
                 window_index: 0, duration_seconds: 0.0, rss_before_bytes: None, rss_after_bytes: None,
                 incomplete_tail_frames: 0, window_started_ns: 0, window_finished_ns: 0, repetition_elapsed_ns: 0,
+                process_cpu_before_ns: None, process_cpu_after_ns: None, system_cpu_before_ns: None, system_cpu_after_ns: None,
             });
         }
     }
