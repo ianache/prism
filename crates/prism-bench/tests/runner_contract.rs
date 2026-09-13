@@ -29,6 +29,14 @@ fn runner_emits_five_repetitions_and_complete_metrics() {
     assert_eq!(run.repetitions.len(), 5);
     assert_eq!(run.correctness_total, 50);
     assert_eq!(run.correctness_matches, 50);
+    assert_eq!(run.warmup_target, 0);
+    assert_eq!(run.warmup_frames, 0);
+    assert_eq!(run.convergence_window, 1_000);
+    assert_eq!(run.convergence_threshold_percent, 5);
+    assert!(run.converged);
+    assert_eq!(run.measured_frames, 10);
+    assert_eq!(run.typed_rejections, 0);
+    assert_eq!(run.execution_failures, 0);
     assert!(run.p99_9_ns >= run.p99_ns);
     assert!(run.max_ns >= run.p99_9_ns);
     assert!(run.frames_per_sec > 0.0);
