@@ -200,3 +200,23 @@ New-Item .\shutdown.flag -ItemType File
 
 El runner no elimina el sentinel. Deja de admitir trabajo nuevo, drena las
 conexiones existentes y termina dentro del timeout configurado.
+
+## S11: transporte TLS y autenticación por token
+
+El TCP local puede protegerse con un certificado PEM y una clave privada PEM;
+ambos deben existir y se validan antes de `READY`:
+
+```powershell
+rtk proxy .\target\release\prism-run.exe --route b2 --listen 127.0.0.1:9000 `
+  --tls-cert .\server-cert.pem --tls-key .\server-key.pem `
+  --auth-token-file .\auth-token.txt
+```
+
+El handshake TLS ocurre antes de admitir la conexión al pool. Si se configura
+`--auth-token-file`, cada sobre JSONL debe incluir `auth_token`; un token
+ausente o incorrecto devuelve `AUTHENTICATION_FAILED` en banda y la conexión
+puede continuar. El token nunca se imprime ni se incluye en una respuesta.
+
+La configuración es opcional: sin esas opciones se conserva el flujo TCP
+plaintext de S8–S10. S11 no incluye rotación de certificados, mTLS, despliegue
+remoto ni calificación P0.

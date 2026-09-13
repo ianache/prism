@@ -2,6 +2,7 @@
 pub struct Envelope {
     pub request_id: String,
     pub payload: Vec<u8>,
+    pub auth_token: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,6 +61,14 @@ fn string_field(input: &str, key: &str) -> Result<String, ProtocolError> {
     })
 }
 
+fn optional_string_field(input: &str, key: &str) -> Result<Option<String>, ProtocolError> {
+    let needle = format!("\"{}\"", key);
+    if !input.contains(&needle) {
+        return Ok(None);
+    }
+    string_field(input, key).map(Some)
+}
+
 fn decode_hex(value: &str) -> Result<Vec<u8>, ProtocolError> {
     if value.is_empty() {
         return Err(ProtocolError {
@@ -107,9 +116,11 @@ pub fn parse_line(line: &str) -> Result<Envelope, ProtocolError> {
     }
     let request_id = string_field(trimmed, "request_id")?;
     let payload_hex = string_field(trimmed, "payload_hex")?;
+    let auth_token = optional_string_field(trimmed, "auth_token")?;
     Ok(Envelope {
         request_id,
         payload: decode_hex(&payload_hex)?,
+        auth_token,
     })
 }
 
@@ -142,6 +153,22 @@ mod tests {
                 .unwrap()
                 .request_id,
             "a\"b"
+        );
+    }
+
+    #[test]
+    fn parses_optional_auth_token_without_changing_plain_envelopes() {
+        assert_eq!(
+            parse_line(r#"{"request_id":"a","payload_hex":"ff","auth_token":"secret"}"#)
+                .unwrap()
+                .auth_token,
+            Some("secret".into())
+        );
+        assert_eq!(
+            parse_line(r#"{"request_id":"a","payload_hex":"ff"}"#)
+                .unwrap()
+                .auth_token,
+            None
         );
     }
 }

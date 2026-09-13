@@ -80,3 +80,24 @@ fn accepts_optional_listen_address() {
     let args = parse_args(["prism-run", "--route", "b1", "--listen", "127.0.0.1:0"]).unwrap();
     assert_eq!(args.listen.as_deref(), Some("127.0.0.1:0"));
 }
+
+#[test]
+fn accepts_secure_transport_options() {
+    let args = parse_args([
+        "prism-run",
+        "--route",
+        "b0",
+        "--listen",
+        "127.0.0.1:0",
+        "--tls-cert",
+        "cert.pem",
+        "--tls-key",
+        "key.pem",
+        "--auth-token-file",
+        "token.txt",
+    ])
+    .unwrap();
+    assert_eq!(args.tls_cert.as_deref(), Some("cert.pem"));
+    assert_eq!(args.tls_key.as_deref(), Some("key.pem"));
+    assert_eq!(args.auth_token_file.as_deref(), Some("token.txt"));
+}

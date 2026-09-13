@@ -3,7 +3,7 @@ use std::net::TcpListener;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use prism_runner::{lifecycle, parse_args, transport, usage, CliError};
+use prism_runner::{lifecycle, parse_args, security, transport, usage, CliError};
 
 fn main() {
     let args = match parse_args(std::env::args()) {
@@ -14,6 +14,23 @@ fn main() {
         }
         Err(error) => {
             eprintln!("{}: {:?}", usage(), error);
+            std::process::exit(2);
+        }
+    };
+    if args.listen.is_none()
+        && (args.tls_cert.is_some() || args.tls_key.is_some() || args.auth_token_file.is_some())
+    {
+        eprintln!("TLS and authentication options require --listen");
+        std::process::exit(2);
+    }
+    let security = match security::load(
+        args.tls_cert.as_deref(),
+        args.tls_key.as_deref(),
+        args.auth_token_file.as_deref(),
+    ) {
+        Ok(config) => config,
+        Err(error) => {
+            eprintln!("security configuration invalid: {error}");
             std::process::exit(2);
         }
     };
@@ -49,6 +66,7 @@ fn main() {
             args.connection_queue,
             controller.flag(),
             controller.deadline,
+            security,
         );
         controller.signal();
         if let Some(handle) = watcher {

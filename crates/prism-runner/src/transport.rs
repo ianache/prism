@@ -1,4 +1,4 @@
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -7,7 +7,9 @@ use std::sync::{
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::{output, process_line, Route};
+use rustls::{ServerConnection, StreamOwned};
+
+use crate::{output, process_line_with_auth, security::SecurityConfig, Route};
 
 pub const MAX_LINE_BYTES: usize = 64 * 1024;
 
@@ -55,30 +57,62 @@ fn read_bounded(reader: &mut impl BufRead) -> io::Result<Option<String>> {
         .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "input is not UTF-8"))
 }
 
-fn write_line(stream: &mut TcpStream, value: &str) -> io::Result<()> {
+enum ClientStream {
+    Plain(TcpStream),
+    Tls(StreamOwned<ServerConnection, TcpStream>),
+}
+
+impl Read for ClientStream {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        match self {
+            Self::Plain(stream) => stream.read(buf),
+            Self::Tls(stream) => stream.read(buf),
+        }
+    }
+}
+
+impl Write for ClientStream {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        match self {
+            Self::Plain(stream) => stream.write(buf),
+            Self::Tls(stream) => stream.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        match self {
+            Self::Plain(stream) => stream.flush(),
+            Self::Tls(stream) => stream.flush(),
+        }
+    }
+}
+
+fn write_line(stream: &mut impl Write, value: &str) -> io::Result<()> {
     stream.write_all(value.as_bytes())?;
     stream.write_all(b"\n")?;
     stream.flush()
 }
 
 fn handle_connection(
-    stream: TcpStream,
+    stream: ClientStream,
     route: Route,
     prefix: &str,
     sequence: &mut usize,
     shutdown: &Arc<AtomicBool>,
     drain_deadline: &Arc<Mutex<Option<Instant>>>,
-    read_timeout: Duration,
+    _read_timeout: Duration,
+    auth_token: Option<&str>,
 ) -> io::Result<()> {
-    stream.set_read_timeout(Some(read_timeout))?;
-    stream.set_write_timeout(Some(read_timeout))?;
-    let mut reader = BufReader::new(stream.try_clone()?);
     let mut stream = stream;
+    let mut reader = BufReader::new(&mut stream);
     loop {
         match read_bounded(&mut reader) {
             Ok(Some(line)) => {
                 *sequence += 1;
-                write_line(&mut stream, &process_line(route, prefix, *sequence, &line))?;
+                let response = process_line_with_auth(route, prefix, *sequence, &line, auth_token);
+                reader.get_mut().write_all(response.as_bytes())?;
+                reader.get_mut().write_all(b"\n")?;
+                reader.get_mut().flush()?;
             }
             Ok(None) => return Ok(()),
             Err(error)
@@ -122,11 +156,12 @@ pub fn capacity(workers: usize, queue: usize) -> usize {
 }
 
 struct Job {
-    stream: TcpStream,
+    stream: ClientStream,
     permits: Arc<Mutex<usize>>,
     shutdown: Arc<AtomicBool>,
     drain_deadline: Arc<Mutex<Option<Instant>>>,
     read_timeout: Duration,
+    auth_token: Option<String>,
 }
 
 fn worker_loop(receiver: Arc<Mutex<mpsc::Receiver<Job>>>, route: Route, prefix: String) {
@@ -143,6 +178,7 @@ fn worker_loop(receiver: Arc<Mutex<mpsc::Receiver<Job>>>, route: Route, prefix: 
             &job.shutdown,
             &job.drain_deadline,
             job.read_timeout,
+            job.auth_token.as_deref(),
         ) {
             eprintln!("connection failed: {error}");
         }
@@ -150,7 +186,7 @@ fn worker_loop(receiver: Arc<Mutex<mpsc::Receiver<Job>>>, route: Route, prefix: 
     }
 }
 
-fn reject(mut stream: TcpStream, route: Route, code: &str, message: &str) -> io::Result<()> {
+fn reject(mut stream: impl Write, route: Route, code: &str, message: &str) -> io::Result<()> {
     write_line(
         &mut stream,
         &output::error("connection", route.as_str(), code, message),
@@ -165,6 +201,7 @@ pub fn serve(
     queue: usize,
     shutdown: Arc<AtomicBool>,
     drain_timeout: Duration,
+    security: SecurityConfig,
 ) -> io::Result<()> {
     let address = listener.local_addr()?;
     eprintln!("READY {}", address);
@@ -198,8 +235,34 @@ pub fn serve(
         }
         match listener.accept() {
             Ok((stream, _)) => {
+                let stream = stream;
+                stream.set_nonblocking(false)?;
+                let handshake_timeout = if security.tls.is_some() {
+                    Duration::from_secs(5)
+                } else {
+                    read_timeout
+                };
+                stream.set_read_timeout(Some(handshake_timeout))?;
+                stream.set_write_timeout(Some(handshake_timeout))?;
+                let mut stream = match secure_stream(stream, security.tls.as_ref()) {
+                    Ok(stream) => stream,
+                    Err(error) => {
+                        eprintln!("TLS_HANDSHAKE_FAILED: {error}");
+                        continue;
+                    }
+                };
+                match &mut stream {
+                    ClientStream::Plain(stream) => {
+                        stream.set_read_timeout(Some(read_timeout))?;
+                        stream.set_write_timeout(Some(read_timeout))?;
+                    }
+                    ClientStream::Tls(stream) => {
+                        stream.sock.set_read_timeout(Some(read_timeout))?;
+                        stream.sock.set_write_timeout(Some(read_timeout))?;
+                    }
+                }
                 if draining || shutdown.load(Ordering::Acquire) {
-                    reject(stream, route, "SERVER_DRAINING", "server is draining")?;
+                    reject(&mut stream, route, "SERVER_DRAINING", "server is draining")?;
                     continue;
                 }
                 let admitted = {
@@ -213,7 +276,7 @@ pub fn serve(
                 };
                 if !admitted {
                     reject(
-                        stream,
+                        &mut stream,
                         route,
                         "CAPACITY_EXCEEDED",
                         "connection capacity is full",
@@ -226,13 +289,14 @@ pub fn serve(
                     shutdown: Arc::clone(&shutdown),
                     drain_deadline: Arc::clone(&drain_deadline),
                     read_timeout,
+                    auth_token: security.auth_token.clone(),
                 };
                 match sender.try_send(job) {
                     Ok(()) => {}
-                    Err(mpsc::TrySendError::Full(job)) => {
+                    Err(mpsc::TrySendError::Full(mut job)) => {
                         *job.permits.lock().expect("capacity lock poisoned") += 1;
                         reject(
-                            job.stream,
+                            &mut job.stream,
                             route,
                             "CAPACITY_EXCEEDED",
                             "connection capacity is full",
@@ -261,6 +325,22 @@ pub fn serve(
     }
     eprintln!("STOPPED");
     Ok(())
+}
+
+fn secure_stream(
+    stream: TcpStream,
+    config: Option<&std::sync::Arc<rustls::ServerConfig>>,
+) -> io::Result<ClientStream> {
+    let Some(config) = config else {
+        return Ok(ClientStream::Plain(stream));
+    };
+    let mut connection = ServerConnection::new(std::sync::Arc::clone(config))
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    let mut socket = stream;
+    while connection.is_handshaking() {
+        connection.complete_io(&mut socket)?;
+    }
+    Ok(ClientStream::Tls(StreamOwned::new(connection, socket)))
 }
 
 #[cfg(test)]

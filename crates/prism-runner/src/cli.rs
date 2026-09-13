@@ -30,6 +30,9 @@ pub struct Args {
     pub listen: Option<String>,
     pub workers: usize,
     pub connection_queue: usize,
+    pub tls_cert: Option<String>,
+    pub tls_key: Option<String>,
+    pub auth_token_file: Option<String>,
     pub shutdown_file: Option<String>,
     pub drain_timeout_ms: usize,
 }
@@ -55,6 +58,9 @@ where
     let mut listen = None;
     let mut workers = 1usize;
     let mut connection_queue = 0usize;
+    let mut tls_cert = None;
+    let mut tls_key = None;
+    let mut auth_token_file = None;
     let mut shutdown_file = None;
     let mut drain_timeout_ms = 5_000usize;
     while let Some(arg) = iter.next() {
@@ -94,6 +100,24 @@ where
                         .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
                 )?;
             }
+            "--tls-cert" => {
+                tls_cert = Some(
+                    iter.next()
+                        .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
+                );
+            }
+            "--tls-key" => {
+                tls_key = Some(
+                    iter.next()
+                        .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
+                );
+            }
+            "--auth-token-file" => {
+                auth_token_file = Some(
+                    iter.next()
+                        .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
+                );
+            }
             "--shutdown-file" => {
                 shutdown_file = Some(
                     iter.next()
@@ -118,6 +142,9 @@ where
         listen,
         workers,
         connection_queue,
+        tls_cert,
+        tls_key,
+        auth_token_file,
         shutdown_file,
         drain_timeout_ms,
     })
@@ -144,5 +171,5 @@ fn parse_bounded_number(flag: &str, value: &str) -> Result<usize, CliError> {
 }
 
 pub fn usage() -> &'static str {
-    "usage: prism-run --route <b0|b1|b2> [--request-id-prefix <prefix>] [--listen <host:port>] [--workers <n>] [--connection-queue <n>] [--shutdown-file <path>] [--drain-timeout-ms <ms>]"
+    "usage: prism-run --route <b0|b1|b2> [--request-id-prefix <prefix>] [--listen <host:port>] [--workers <n>] [--connection-queue <n>] [--tls-cert <certificate.pem> --tls-key <private-key.pem>] [--auth-token-file <token-file>] [--shutdown-file <path>] [--drain-timeout-ms <ms>]"
 }
