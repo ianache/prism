@@ -1,0 +1,76 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Route {
+    B0,
+    B1,
+    B2,
+}
+
+impl Route {
+    pub fn parse(value: &str) -> Result<Self, CliError> {
+        match value {
+            "b0" => Ok(Self::B0),
+            "b1" => Ok(Self::B1),
+            "b2" => Ok(Self::B2),
+            _ => Err(CliError::UnknownRoute(value.to_owned())),
+        }
+    }
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::B0 => "b0",
+            Self::B1 => "b1",
+            Self::B2 => "b2",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Args {
+    pub route: Route,
+    pub request_id_prefix: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CliError {
+    Help,
+    MissingRoute,
+    UnknownArgument(String),
+    MissingValue(String),
+    UnknownRoute(String),
+}
+
+pub fn parse_args<I, S>(args: I) -> Result<Args, CliError>
+where
+    I: IntoIterator<Item = S>,
+    S: Into<String>,
+{
+    let mut iter = args.into_iter().map(Into::into).skip(1);
+    let mut route = None;
+    let mut prefix = String::from("req");
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--help" | "-h" => return Err(CliError::Help),
+            "--route" => {
+                route = Some(Route::parse(
+                    &iter
+                        .next()
+                        .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
+                )?)
+            }
+            "--request-id-prefix" => {
+                prefix = iter
+                    .next()
+                    .ok_or_else(|| CliError::MissingValue(arg.clone()))?
+            }
+            _ if arg.starts_with("--") => return Err(CliError::UnknownArgument(arg)),
+            _ => return Err(CliError::UnknownArgument(arg)),
+        }
+    }
+    Ok(Args {
+        route: route.ok_or(CliError::MissingRoute)?,
+        request_id_prefix: prefix,
+    })
+}
+
+pub fn usage() -> &'static str {
+    "usage: prism-run --route <b0|b1|b2> [--request-id-prefix <prefix>]"
+}

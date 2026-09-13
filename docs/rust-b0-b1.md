@@ -143,3 +143,19 @@ cargo run -p prism-bench --release -- \
   --cpu-model <model> --cores <cores> --ram-bytes <bytes> \
   --os <os> --governor <governor> --affinity <affinity>
 ```
+# S7: flujo vertical local
+
+El binario `prism-run` soporta un flujo funcional continuo local por stdin/stdout:
+
+```powershell
+Get-Content .\s7-input.jsonl | .\target\release\prism-run.exe --route b1 --request-id-prefix demo
+```
+
+Cada línea de entrada es un sobre JSONL con `request_id` y `payload_hex`, donde
+`payload_hex` contiene el frame binario canónico. Cada línea de salida conserva
+el identificador, la ruta, `ok` y el resultado serializado. Las líneas inválidas
+se informan en banda y no detienen las siguientes; EOF termina correctamente.
+
+Las rutas son B0 (directa), B1 (pipeline) y B2 (pipeline con observer F1–F6).
+Este slice es local y funcional: no implica transporte de red, broker, métricas
+de benchmark, calificación P0 ni reinterpreta la evidencia S5/S6.

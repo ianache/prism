@@ -1,6 +1,11 @@
 # Registro de consumo
 
-| 2026-09-13 | rust-s7-production-vertical-slice | plan y especificación S7 Production Vertical Slice | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Diseño aprobado; contrato JSONL refinado a `request_id` + `payload_hex`; plan detallado creado; implementación pendiente. |
+ | 2026-09-13 | rust-s7-production-vertical-slice | plan y especificación S7 Production Vertical Slice | PLANIFICADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Diseño aprobado; contrato JSONL refinado a `request_id` + `payload_hex`; plan detallado creado; implementación pendiente. |
+| 2026-09-13 | rust-s7-production-vertical-slice | tarea 1: crate runner y contrato CLI | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Rutas B0/B1/B2, argumentos y ayuda implementados; contratos focalizados verdes. |
+| 2026-09-13 | rust-s7-production-vertical-slice | tarea 2: sobre JSONL y frontera hexadecimal | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | proveedor no expone tokens ni tiempo de inicio | Parser std-only, escapes, errores estables y hex validado; contratos verdes. |
+| 2026-09-13 | rust-s7-production-vertical-slice | tarea 3: dispatch B0/B1/B2 y serialización | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | B2 reutiliza `process_observed`; outcomes y observación F1–F6 verificados. |
+| 2026-09-13 | rust-s7-production-vertical-slice | tarea 4: lifecycle streaming y E2E | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 1 prueba E2E, tres rutas, orden y errores en banda; documentación local añadida. |
+| 2026-09-13 | rust-s7-production-vertical-slice | tarea 5: verificación y paquete de evidencia | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | Cargo release y 37 pruebas Python verdes; evidencia S7 creada; sin claim P0/red. |
 
  | 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 1: contratos de telemetría CPU y serialización | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 7 contratos runner/output correctos; commit e8adb65. |
 | 2026-09-13 | rust-s6-p99-root-cause-isolation | tarea 2: auditoría y reporte diagnóstico | COMPLETADO | N/D | N/D | N/D | N/D | N/D | N/D | N/D | 6 pruebas focalizadas correctas; commit d9133e9. |
