@@ -2,12 +2,12 @@
 
 Fecha: 2026-09-14  
 Rama: `work/s20-linux-production-gate`  
-Commit verificado: `a6ccb75`  
-Run: `34809118800`
+Commit verificado: `a419be9`  
+Run: `34809776551`
 
 ## Resultado
 
-El workflow [Production Readiness run 34809118800](https://github.com/ianache/prism/actions/runs/34809118800) terminó con éxito en Ubuntu. Pasaron `contracts`, `compose`, `rust`, `docker-build` y `production-runtime`.
+El workflow [Production Readiness run 34809776551](https://github.com/ianache/prism/actions/runs/34809776551) terminó con éxito en Ubuntu. Pasaron `contracts`, `compose`, `rust`, `docker-build` y `production-runtime`.
 
 ## Gate operacional
 
@@ -16,6 +16,7 @@ El workflow [Production Readiness run 34809118800](https://github.com/ianache/pr
 - Usuario efectivo del proceso telemetry: `10001`.
 - Smoke: 3/3 frames.
 - Carga real: `frames_sent=100000`, `frames_ok=100000`.
+- Duración de carga reportada: `55012.881 ms`.
 - Digest del dataset: `a0bed9fff13f913938f826e3cdaafd9d6de158fd3f609054b7b0969197ec630d`.
 - `synthetic_cycle=false` en preflight, smoke, carga y reconnect.
 - Reconnect: 3/3 frames después de stop/start del servidor.
