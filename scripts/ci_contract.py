@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 REQUIRED_JOBS = ("rust:", "contracts:", "compose:", "docker-build:")
-FORBIDDEN_MARKERS = ("-----BEGIN PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----")
+FORBIDDEN_MARKERS = ("-----BEGIN " + "PRIVATE KEY-----", "-----BEGIN " + "RSA PRIVATE KEY-----")
 
 
 def tracked_files(root: Path) -> list[Path]:
