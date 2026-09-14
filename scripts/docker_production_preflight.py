@@ -21,6 +21,7 @@ def validate(root: Path, secret_dir: Path, expected_uid: int) -> dict[str, objec
 
     files = []
     owner_checked = hasattr(os, "getuid")
+    current_uid = os.getuid() if owner_checked else None
     for name in SECRET_NAMES:
         path = secret_dir / name
         if not path.is_file():
@@ -28,7 +29,7 @@ def validate(root: Path, secret_dir: Path, expected_uid: int) -> dict[str, objec
         mode = stat.S_IMODE(path.stat().st_mode)
         if os.name != "nt" and mode & 0o077:
             raise ValueError(f"secret file is too permissive: {name}")
-        if owner_checked and path.stat().st_uid not in (0, expected_uid):
+        if owner_checked and path.stat().st_uid not in (0, expected_uid, current_uid):
             raise ValueError(f"unexpected secret owner: {name}")
         files.append({"name": name, "mode": oct(mode), "owner_checked": owner_checked})
     return {
