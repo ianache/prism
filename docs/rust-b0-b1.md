@@ -220,3 +220,16 @@ puede continuar. El token nunca se imprime ni se incluye en una respuesta.
 La configuración es opcional: sin esas opciones se conserva el flujo TCP
 plaintext de S8–S10. S11 no incluye rotación de certificados, mTLS, despliegue
 remoto ni calificación P0.
+
+La verificación de proceso TLS se ejecuta con:
+
+```powershell
+rtk proxy 'C:\Users\ilver\.cargo\bin\cargo.exe' test -p prism-runner --release --test s12_tls_e2e
+```
+
+Para una prueba manual con certificados PEM existentes:
+
+```powershell
+rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\manual_s12_tls.ps1 `
+  -Certificate .\server-cert.pem -PrivateKey .\server-key.pem -TokenFile .\auth-token.txt
+```
