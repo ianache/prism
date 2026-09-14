@@ -34,6 +34,9 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
   -keyout "$secret_dir/server-key.pem" -out "$secret_dir/server-cert.pem" >/dev/null 2>&1
 printf 's18-ephemeral-token\n' > "$secret_dir/auth-token.txt"
 chmod 600 "$secret_dir"/*
+export PRISM_TLS_CERT_CONTENT="$(cat "$secret_dir/server-cert.pem")"
+export PRISM_TLS_KEY_CONTENT="$(cat "$secret_dir/server-key.pem")"
+export PRISM_AUTH_TOKEN_CONTENT="$(cat "$secret_dir/auth-token.txt")"
 python3 "$root/scripts/generate_telemetry_stream.py" \
   --template "$root/tests/fixtures/p0-smoke/fixtures/p0-valid-0000060-105.bin" \
   --output "$data_dir/telemetry.jsonl" --manifest "$data_dir/telemetry.json" --frames "$frames" >/dev/null

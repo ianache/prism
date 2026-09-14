@@ -27,3 +27,14 @@ def test_production_gate_uses_non_root_and_disables_synthetic_cycle():
     text = (ROOT / "scripts" / "docker_production_readiness.sh").read_text(encoding="utf-8")
     assert "PRISM_CONTAINER_USER=10001:10001" in text
     assert "PRISM_ALLOW_CYCLE=false" in text
+
+
+def test_production_gate_exports_environment_secrets_for_non_root_compose_mounts():
+    runner = (ROOT / "scripts" / "docker_production_readiness.sh").read_text(encoding="utf-8")
+    overlay = (ROOT / "docker-compose.production.yml").read_text(encoding="utf-8")
+    for name in ("PRISM_TLS_CERT_CONTENT", "PRISM_TLS_KEY_CONTENT", "PRISM_AUTH_TOKEN_CONTENT"):
+        assert f'export {name}=' in runner
+        assert f"environment: {name}" in overlay
+    assert 'uid: "10001"' in overlay
+    assert 'gid: "10001"' in overlay
+    assert "mode: 0400" in overlay
