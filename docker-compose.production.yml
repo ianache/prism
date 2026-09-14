@@ -1,0 +1,7 @@
+services:
+  server:
+    user: "10001:10001"
+  client:
+    user: "10001:10001"
+  telemetry-client:
+    user: "10001:10001"

@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+secrets
+target
+graphify-out
+docs
+results
+datasets
+tests
+tools
+specification
+scripts
+*.pem
+*.key
+*.txt

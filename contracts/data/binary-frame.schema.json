@@ -5,7 +5,8 @@
   "type":"object","additionalProperties":false,
   "required":["kind","schema_version","bytes_b64","payload_length","payload_class"],
   "properties":{
-    "kind":{"const":"binary_frame"},"schema_version":{"const":"1.0"},
+    "kind":{"const":"binary_frame"},
+    "schema_version":{"const":"1.0"},
     "bytes_b64":{"type":"string","contentEncoding":"base64"},
     "payload_length":{"type":"integer","minimum":45,"maximum":65535},
     "payload_class":{"enum":[105,249,501]}

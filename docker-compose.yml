@@ -1,0 +1,93 @@
+services:
+  server: &server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    user: "${PRISM_CONTAINER_USER:-10001:10001}"
+    stop_grace_period: 10s
+    environment:
+      PRISM_BIND: ${PRISM_BIND:-0.0.0.0:9000}
+      PRISM_ROUTE: ${PRISM_ROUTE:-b2}
+      PRISM_WORKERS: ${PRISM_WORKERS:-2}
+      PRISM_CONNECTION_QUEUE: ${PRISM_CONNECTION_QUEUE:-2}
+      PRISM_DRAIN_TIMEOUT_MS: ${PRISM_DRAIN_TIMEOUT_MS:-5000}
+      PRISM_TLS_CERT_FILE: /run/secrets/server-cert.pem
+      PRISM_TLS_KEY_FILE: /run/secrets/server-key.pem
+      PRISM_AUTH_TOKEN_FILE: /run/secrets/auth-token.txt
+      PRISM_HEALTH_ADDRESS: 127.0.0.1:9000
+    ports:
+      - "${PRISM_HOST_PORT:-9000}:9000"
+    secrets:
+      - source: prism_server_cert
+        target: server-cert.pem
+      - source: prism_server_key
+        target: server-key.pem
+      - source: prism_auth_token
+        target: auth-token.txt
+    healthcheck:
+      test: ["CMD", "python3", "/opt/prism/healthcheck.py"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles: ["client"]
+    user: "${PRISM_CONTAINER_USER:-10001:10001}"
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      PRISM_SERVER_HOST: server
+      PRISM_SERVER_PORT: 9000
+      PRISM_TLS_CERT_FILE: /run/secrets/server-cert.pem
+      PRISM_AUTH_TOKEN_FILE: /run/secrets/auth-token.txt
+    secrets:
+      - source: prism_server_cert
+        target: server-cert.pem
+      - source: prism_auth_token
+        target: auth-token.txt
+    entrypoint: ["python3", "/opt/prism/client.py"]
+
+  telemetry-client: &telemetry_client
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles: ["telemetry"]
+    user: "${PRISM_CONTAINER_USER:-10001:10001}"
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      PRISM_SERVER_HOST: server
+      PRISM_SERVER_PORT: 9000
+      PRISM_TLS_CERT_FILE: /run/secrets/server-cert.pem
+      PRISM_AUTH_TOKEN_FILE: /run/secrets/auth-token.txt
+      PRISM_INPUT_PATH: /data/frames
+      PRISM_INPUT_STREAM: ${PRISM_INPUT_STREAM:-}
+      PRISM_INPUT_GLOB: ${PRISM_INPUT_GLOB:-*.bin}
+      PRISM_FRAME_TARGET: ${PRISM_FRAME_TARGET:-100000}
+      PRISM_REQUEST_PREFIX: ${PRISM_REQUEST_PREFIX:-telemetry}
+      PRISM_ALLOW_CYCLE: ${PRISM_ALLOW_CYCLE:-false}
+      PRISM_BATCH_SIZE: ${PRISM_BATCH_SIZE:-1}
+    volumes:
+      - ${PRISM_INPUT_PATH:-./tests/fixtures/p0-smoke/fixtures}:/data/frames:ro
+    secrets:
+      - source: prism_server_cert
+        target: server-cert.pem
+      - source: prism_auth_token
+        target: auth-token.txt
+    entrypoint: ["python3", "/opt/prism/telemetry_client.py"]
+
+secrets:
+  prism_server_cert:
+    file: ${PRISM_TLS_CERT:-./secrets/server-cert.pem}
+  prism_server_key:
+    file: ${PRISM_TLS_KEY:-./secrets/server-key.pem}
+  prism_auth_token:
+    file: ${PRISM_AUTH_TOKEN:-./secrets/auth-token.txt}
