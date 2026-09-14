@@ -40,5 +40,5 @@ bash scripts/docker_production_readiness.sh \
 ```
 
 La evidencia final debe incluir digest, UID/GID efectivo, `frames_ok`, duración,
-`STARTING → READY → DRAINING → STOPPED`, reconexión y logs sanitizados. No debe
+`STARTING → READY → DRAINING → STOPPED`, lifecycle, duration, reconexión y logs sanitized/sanitizados. No debe
 contener tokens, claves privadas ni el corpus JSONL.

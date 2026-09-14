@@ -10,9 +10,13 @@ def test_ci_workflow_has_required_jobs_and_commands():
         assert job in workflow
     assert "cargo test --workspace --release" in workflow
     assert "docker-compose.production.yml" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "--evidence-dir ./artifacts/s20" in workflow
+    assert "name: s20-linux-production-gate" in workflow
+    assert "path: artifacts/s20/" in workflow
 
 
 def test_ci_contract_scanner_rejects_secret_material_and_accepts_required_files():
     scanner = ROOT / "scripts" / "ci_contract.py"
     assert scanner.exists()
-    assert "forbidden" in scanner.read_text(encoding="utf-8")
+    assert "forbidden_markers" in scanner.read_text(encoding="utf-8")

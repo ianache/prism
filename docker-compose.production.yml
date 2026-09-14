@@ -1,7 +1,53 @@
 services:
   server:
     user: "10001:10001"
+    secrets: !override
+      - source: prism_server_cert
+        target: server-cert.pem
+        uid: "10001"
+        gid: "10001"
+        mode: 0400
+      - source: prism_server_key
+        target: server-key.pem
+        uid: "10001"
+        gid: "10001"
+        mode: 0400
+      - source: prism_auth_token
+        target: auth-token.txt
+        uid: "10001"
+        gid: "10001"
+        mode: 0400
   client:
     user: "10001:10001"
+    secrets: !override
+      - source: prism_server_cert
+        target: server-cert.pem
+        uid: "10001"
+        gid: "10001"
+        mode: 0400
+      - source: prism_auth_token
+        target: auth-token.txt
+        uid: "10001"
+        gid: "10001"
+        mode: 0400
   telemetry-client:
     user: "10001:10001"
+    secrets: !override
+      - source: prism_server_cert
+        target: server-cert.pem
+        uid: "10001"
+        gid: "10001"
+        mode: 0400
+      - source: prism_auth_token
+        target: auth-token.txt
+        uid: "10001"
+        gid: "10001"
+        mode: 0400
+
+secrets: !override
+  prism_server_cert:
+    environment: PRISM_TLS_CERT_CONTENT
+  prism_server_key:
+    environment: PRISM_TLS_KEY_CONTENT
+  prism_auth_token:
+    environment: PRISM_AUTH_TOKEN_CONTENT

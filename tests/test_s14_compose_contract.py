@@ -8,16 +8,17 @@ def compose_text() -> str:
     return (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
 
 
-def test_compose_declares_server_and_profile_client_with_tls_mounts():
+def test_compose_declares_server_and_profile_client_with_compose_secrets():
     text = compose_text()
     assert "server:" in text
     assert "client:" in text
     assert "profiles:" in text
-    assert "- client" in text
+    assert 'profiles: ["client"]' in text
     assert "PRISM_TLS_CERT" in text
     assert "PRISM_TLS_KEY" in text
     assert "PRISM_AUTH_TOKEN" in text
-    assert ":ro" in text
+    assert "secrets:" in text
+    assert "/run/secrets/" in text
     assert "healthcheck:" in text
     assert "stop_grace_period" in text
 
