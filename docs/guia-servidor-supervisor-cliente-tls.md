@@ -245,6 +245,22 @@ Este script acepta explícitamente el certificado local mediante un callback de 
 | Estado del supervisor inexistente | Ejecuta `start` antes de `check` o `stop`, usando el mismo `StateDirectory`. |
 | Falla de confianza TLS en Python | Asegura que el certificado se pase como `cafile` y que `server_hostname` coincida con su SAN/CN. |
 
+## Gate S18 en CI Linux
+
+El workflow `.github/workflows/production-readiness.yml` valida Rust, contratos,
+las dos configuraciones Compose y el build Docker. En un runner Linux con Docker
+disponible, el gate operacional se ejecuta con:
+
+```bash
+bash scripts/docker_production_readiness.sh --frames 100000 --batch-size 64 \
+  --evidence-dir ./artifacts/s18
+```
+
+El script genera secretos y corpus temporales, valida UID/GID `10001:10001`,
+ejecuta smoke, 100K, lifecycle y reconexión, y elimina los recursos al salir.
+La evidencia es válida solo si contiene `synthetic_cycle=false`,
+`frames_ok=100000`, digest y logs sanitizados.
+
 ## Alcance actual
 
 Este flujo cubre TLS de servidor, autenticación por token, JSONL B2, capacidad, lifecycle y supervisión local. Todavía no incluye mTLS, rotación automática de certificados, broker, persistencia, servicio Windows, despliegue remoto ni Kubernetes.

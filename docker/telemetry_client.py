@@ -5,6 +5,7 @@ import os
 import socket
 import ssl
 import sys
+import time
 from pathlib import Path
 
 
@@ -57,6 +58,7 @@ def main() -> int:
         token = handle.read().strip()
 
     digest = hashlib.sha256()
+    started = time.monotonic()
     context = ssl.create_default_context(cafile=cafile)
     sent = 0
     payloads = iter_stream_payloads(Path(stream_path)) if stream_path else None
@@ -89,7 +91,8 @@ def main() -> int:
                         raise RuntimeError(f"respuesta inválida para {request_id}: {response}")
                     sent += 1
 
-    print(json.dumps({"marker": "S15_TELEMETRY_OK", "frames_sent": sent, "frames_ok": sent, "dataset_sha256": digest.hexdigest(), "synthetic_cycle": allow_cycle}))
+    effective_user = str(os.getuid()) if hasattr(os, "getuid") else os.environ.get("USERNAME", "unknown")
+    print(json.dumps({"marker": "S15_TELEMETRY_OK", "frames_sent": sent, "frames_ok": sent, "dataset_sha256": digest.hexdigest(), "synthetic_cycle": allow_cycle, "effective_user": effective_user, "duration_ms": round((time.monotonic() - started) * 1000, 3)}))
     return 0
 
 
