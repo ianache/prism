@@ -180,17 +180,27 @@ fn worker_loop(receiver: Arc<Mutex<mpsc::Receiver<Job>>>, route: Route, prefix: 
             job.read_timeout,
             job.auth_token.as_deref(),
         ) {
-            eprintln!("connection failed: {error}");
+            if !matches!(
+                error.kind(),
+                io::ErrorKind::ConnectionReset | io::ErrorKind::UnexpectedEof
+            ) {
+                eprintln!("connection failed: {error}");
+            }
         }
         *job.permits.lock().expect("capacity lock poisoned") += 1;
     }
 }
 
-fn reject(mut stream: impl Write, route: Route, code: &str, message: &str) -> io::Result<()> {
+fn reject(stream: &mut ClientStream, route: Route, code: &str, message: &str) -> io::Result<()> {
     write_line(
-        &mut stream,
+        stream,
         &output::error("connection", route.as_str(), code, message),
-    )
+    )?;
+    if let ClientStream::Tls(tls) = stream {
+        tls.conn.send_close_notify();
+        tls.flush()?;
+    }
+    Ok(())
 }
 
 pub fn serve(
