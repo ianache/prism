@@ -1,6 +1,7 @@
 name: Production Readiness
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -44,10 +45,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run non-root TLS readiness gate
-        run: bash scripts/docker_production_readiness.sh --frames 100000 --batch-size 64 --evidence-dir ./artifacts/s18
+        run: bash scripts/docker_production_readiness.sh --frames 100000 --batch-size 64 --evidence-dir ./artifacts/s20
       - name: Upload sanitized evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: s18-production-readiness
-          path: artifacts/s18/
+          name: s20-linux-production-gate
+          path: artifacts/s20/
