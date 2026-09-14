@@ -233,3 +233,23 @@ Para una prueba manual con certificados PEM existentes:
 rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\manual_s12_tls.ps1 `
   -Certificate .\server-cert.pem -PrivateKey .\server-key.pem -TokenFile .\auth-token.txt
 ```
+
+## S13: supervisión operativa local
+
+El supervisor PowerShell administra estado no secreto, readiness, health check
+y apagado controlado:
+
+```powershell
+$state = Join-Path $env:TEMP "prism-s13-state"
+rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\s13_supervisor.ps1 `
+  -Action start -StateDirectory $state -Certificate .\server-cert.pem `
+  -PrivateKey .\server-key.pem -TokenFile .\auth-token.txt
+rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\s13_supervisor.ps1 `
+  -Action check -StateDirectory $state -TokenFile .\auth-token.txt
+rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\s13_supervisor.ps1 `
+  -Action stop -StateDirectory $state
+```
+
+`start` devuelve `S13_START_OK`, `check` devuelve `S13_CHECK_OK` y `stop`
+devuelve `S13_STOP_OK`. El wrapper no registra tokens ni material de
+certificados y no instala un servicio Windows.
