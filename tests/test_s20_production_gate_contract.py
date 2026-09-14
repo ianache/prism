@@ -38,3 +38,9 @@ def test_production_gate_exports_environment_secrets_for_non_root_compose_mounts
     assert 'uid: "10001"' in overlay
     assert 'gid: "10001"' in overlay
     assert "mode: 0400" in overlay
+
+
+def test_production_gate_invokes_compose_without_eval_string_reparsing():
+    runner = (ROOT / "scripts" / "docker_production_readiness.sh").read_text(encoding="utf-8")
+    assert "compose=(docker compose" in runner
+    assert 'eval "$compose' not in runner
