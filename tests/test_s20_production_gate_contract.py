@@ -44,3 +44,9 @@ def test_production_gate_invokes_compose_without_eval_string_reparsing():
     runner = (ROOT / "scripts" / "docker_production_readiness.sh").read_text(encoding="utf-8")
     assert "compose=(docker compose" in runner
     assert 'eval "$compose' not in runner
+
+
+def test_workflow_runs_s20_runtime_and_preflight_contracts():
+    workflow = (ROOT / ".github" / "workflows" / "production-readiness.yml").read_text(encoding="utf-8")
+    assert "tests/test_s18_production_preflight.py" in workflow
+    assert "tests/test_s20_production_gate_contract.py" in workflow

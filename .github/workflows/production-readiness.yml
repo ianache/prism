@@ -23,7 +23,7 @@ jobs:
           python-version: '3.x'
       - run: python -m pip install pytest
       - run: python scripts/ci_contract.py .
-      - run: python -m pytest tests/test_s14_compose_contract.py tests/test_s15_telemetry_contract.py tests/test_s17_stream_contract.py tests/test_s18_ci_contract.py
+      - run: python -m pytest tests/test_s14_compose_contract.py tests/test_s15_telemetry_contract.py tests/test_s17_stream_contract.py tests/test_s18_ci_contract.py tests/test_s18_production_preflight.py tests/test_s20_production_gate_contract.py
 
   compose:
     runs-on: ubuntu-latest

@@ -74,6 +74,8 @@ printf '%s\n' "$result" > "$evidence_dir/telemetry.log"
 echo "$result" | grep -q '"frames_sent": '$frames
 echo "$result" | grep -q '"frames_ok": '$frames
 echo "$result" | grep -q '"synthetic_cycle": false'
+echo "$result" | grep -q '"dataset_sha256":'
+echo "$result" | grep -q '"effective_user":'
 echo 'phase=lifecycle'
 "${compose[@]}" stop -t 10 server >/dev/null
 "${compose[@]}" up -d server >/dev/null
