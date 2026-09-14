@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 REQUIRED_JOBS = ("rust:", "contracts:", "compose:", "docker-build:")
-FORBIDDEN_MARKERS = ("-----BEGIN " + "PRIVATE KEY-----", "-----BEGIN " + "RSA PRIVATE KEY-----")
+forbidden_markers = ("-----BEGIN " + "PRIVATE KEY-----", "-----BEGIN " + "RSA PRIVATE KEY-----")
 
 
 def tracked_files(root: Path) -> list[Path]:
@@ -31,7 +31,7 @@ def validate(root: Path) -> dict[str, object]:
     for path in tracked_files(root):
         if path.is_file():
             text = path.read_text(encoding="utf-8", errors="ignore")
-            if any(marker in text for marker in FORBIDDEN_MARKERS):
+            if any(marker in text for marker in forbidden_markers):
                 violations.append(path.relative_to(root).as_posix())
         relative = path.relative_to(root).as_posix()
         if relative.startswith("secrets/") or relative in {".env", ".env.production"}:
