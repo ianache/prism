@@ -141,3 +141,17 @@ el launcher ejecuta el gate real o registra un bloqueo ambiental determinista,
 la matriz y evidencia están sanitizadas, las suites pasan y `docs/consumo.md`
 está actualizado. La aceptación comparable exige exactamente `100000` frames;
 los smoke no la sustituyen.
+
+## Cierre de ejecución
+
+- [x] Tarea 1: prerrequisitos WSL2 y Docker.
+- [x] Tarea 2: preparación manual del entorno.
+- [x] Tarea 3: validación del launcher WSL2.
+- [x] Tarea 4: matriz y evidencia local sanitizada.
+- [x] Tarea 5: verificación completa, consumo y cierre auditable.
+
+Las tareas 1–5 fueron ejecutadas y verificadas. La matriz local conserva cuatro
+casos `NO EJECUTADA` porque el host no tiene una distribución Linux de usuario;
+esta condición no se presenta como PASS ni como FAIL del runtime. La suite
+Python, Cargo release, Compose, parseo PowerShell, diff y escaneo de secretos
+quedaron verificados. La meta comparable permanece exactamente `100000`.

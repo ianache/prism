@@ -306,6 +306,33 @@ rtk proxy docker.exe version
 rtk proxy docker.exe compose version
 ```
 
+Dentro de la distribución Linux operativa, valida también:
+
+```bash
+docker version
+docker compose version
+bash --version
+```
+
+### Preparación manual S23
+
+Si no existe una distribución Linux de usuario, instala una manualmente y
+reinicia WSL. El repositorio no realiza esta instalación:
+
+```powershell
+wsl --install -d Ubuntu
+wsl.exe -l -v
+```
+
+La distribución operativa debe mostrar `VERSION 2`. En Docker Desktop habilita
+la integración WSL para esa distribución y valida el daemon desde Linux con los
+comandos anteriores. No uses `docker-desktop-data` como distribución operativa.
+
+Si `docker version` no muestra la sección Server, Docker Desktop no expone el
+daemon a WSL. Si aparece un error de permisos Docker, reinicia la distribución
+o revisa el grupo/socket configurado por Docker Desktop. Los paths Windows se
+traducen con `wslpath`; no copies certificados o tokens al filesystem Linux.
+
 Smoke TCP:
 
 ```powershell
