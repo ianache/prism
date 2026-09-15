@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod dispatch;
+pub mod http;
 pub mod lifecycle;
 pub mod output;
 pub mod protocol;
