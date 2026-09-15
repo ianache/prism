@@ -309,8 +309,15 @@ rtk proxy python scripts/audit_evidence_bundle.py .\artifacts\s24\evidence-bundl
 El auditor exige cuatro casos en orden, distingue `PASS`, `FAIL` y
 `NO EJECUTADA`, y solo acepta el gate TCP comparable con exactamente
 `100000/100000`. No se deben copiar payloads, PEM, tokens o credenciales al
-bundle. El artifact CI se llama `s24-evidence-bundle`; el equivalente WSL2 se
+bundle. El artifact CI se llama `s25-production-evidence`; el equivalente WSL2 se
 guarda como `evidence-bundle.json` bajo el directorio de evidencia indicado.
+
+En S25, CI ejecuta además `scripts/audit_evidence_bundle.py` y publica el
+artifact `s25-production-evidence` con `if: always()`. Esto conserva evidencia
+sanitizada cuando una fase falla, pero el exit code del validator/auditor sigue
+fallando el job. `FAIL` significa que el entorno estaba disponible y el gate
+reportó un diagnóstico; `NO EJECUTADA` significa que faltó un prerrequisito y
+requiere un motivo, sin otorgar aceptación.
 
 ## Alcance actual
 
