@@ -9,6 +9,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
 function Write-Failure([string]$Message) {
     [Console]::Error.WriteLine("S22_LOCAL_GATE_ERROR: $Message")

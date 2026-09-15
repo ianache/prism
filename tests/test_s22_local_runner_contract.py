@@ -40,3 +40,16 @@ def test_launcher_reports_missing_prerequisites_deterministically():
     assert "bash" in text.lower()
     assert "distribution" in text.lower()
     assert "Write-Failure" in text
+
+
+def test_launcher_uses_strict_mode_and_safe_wsl_invocation():
+    text = launcher_text()
+    assert "Set-StrictMode -Version Latest" in text
+    assert "wslpath" in text
+    assert "--distribution" in text
+    assert "bash -lc" in text
+    assert "--frames $Frames" in text
+    assert "--batch-size $BatchSize" in text
+    assert "--evidence-dir $evidenceArg" in text
+    assert "PRISM_PROTOCOL" in text
+    assert "Invoke-Expression" not in text
