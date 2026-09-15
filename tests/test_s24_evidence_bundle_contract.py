@@ -32,7 +32,7 @@ def test_requires_reason_for_not_executed_and_diagnostic_for_failure():
 def test_rejects_incomplete_comparable_gate_and_sensitive_values():
     bundle = valid_bundle()
     bundle["cases"][2]["frames_ok"] = 99999
-    bundle["secret"] = "-----BEGIN PRIVATE KEY-----"
+    bundle["secret"] = "-----BEGIN " + "PRIVATE KEY-----"
     errors = validate_bundle(bundle)
     assert any("100000" in error for error in errors)
     assert any("secret" in error.lower() for error in errors)
