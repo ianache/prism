@@ -20,6 +20,35 @@ pub fn process_line_with_auth(
     line: &str,
     expected_token: Option<&str>,
 ) -> String {
+    process_line_with_credentials(route, prefix, sequence, line, None, expected_token)
+}
+
+pub fn process_line_with_bearer(
+    route: Route,
+    prefix: &str,
+    sequence: usize,
+    line: &str,
+    bearer_token: Option<&str>,
+    expected_token: Option<&str>,
+) -> String {
+    process_line_with_credentials(
+        route,
+        prefix,
+        sequence,
+        line,
+        bearer_token,
+        expected_token,
+    )
+}
+
+fn process_line_with_credentials(
+    route: Route,
+    prefix: &str,
+    sequence: usize,
+    line: &str,
+    external_token: Option<&str>,
+    expected_token: Option<&str>,
+) -> String {
     let fallback_id = format!("{}-{}", prefix, sequence);
     let envelope = match protocol::parse_line(line) {
         Ok(envelope) => envelope,
@@ -33,7 +62,8 @@ pub fn process_line_with_auth(
         format!("{}-{}", prefix, envelope.request_id)
     };
     if let Some(expected) = expected_token {
-        if envelope.auth_token.as_deref() != Some(expected) {
+        let provided = external_token.or(envelope.auth_token.as_deref());
+        if provided != Some(expected) {
             return output::error(
                 &request_id,
                 route.as_str(),

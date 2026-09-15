@@ -60,6 +60,7 @@ fn main() {
             .map(|path| lifecycle::watch_file(PathBuf::from(path), controller.flag()));
         let result = transport::serve(
             listener,
+            args.protocol,
             args.route,
             &args.request_id_prefix,
             args.workers,

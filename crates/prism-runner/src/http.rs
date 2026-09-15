@@ -1,4 +1,7 @@
 use std::fmt;
+use std::io::Read;
+
+use crate::{output, process_line_with_bearer, Route};
 
 pub const MAX_BODY_BYTES: usize = 64 * 1024;
 const MAX_HEADER_BYTES: usize = 16 * 1024;
@@ -126,6 +129,42 @@ pub fn parse_request(raw: &[u8]) -> Result<Request, HttpError> {
     })
 }
 
+pub fn read_request(stream: &mut impl Read) -> Result<Request, HttpError> {
+    let mut raw = Vec::with_capacity(1024);
+    loop {
+        let mut byte = [0u8; 1];
+        let count = stream.read(&mut byte).map_err(|_| HttpError::BadRequest)?;
+        if count == 0 {
+            return Err(HttpError::BadRequest);
+        }
+        raw.push(byte[0]);
+        if raw.len() > MAX_HEADER_BYTES {
+            return Err(HttpError::PayloadTooLarge);
+        }
+        if raw.len() >= 4 && raw[raw.len() - 4..] == *b"\r\n\r\n" {
+            break;
+        }
+    }
+    let header_text = std::str::from_utf8(&raw[..raw.len() - 4]).map_err(|_| HttpError::BadRequest)?;
+    let content_length = header_text
+        .split("\r\n")
+        .skip(1)
+        .find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            (name.eq_ignore_ascii_case("content-length")).then_some(value.trim())
+        })
+        .ok_or(HttpError::BadRequest)?
+        .parse::<usize>()
+        .map_err(|_| HttpError::BadRequest)?;
+    if content_length > MAX_BODY_BYTES {
+        return Err(HttpError::PayloadTooLarge);
+    }
+    let mut body = vec![0u8; content_length];
+    stream.read_exact(&mut body).map_err(|_| HttpError::BadRequest)?;
+    raw.extend_from_slice(&body);
+    parse_request(&raw)
+}
+
 pub fn response_bytes(status: u16, body: &[u8]) -> Vec<u8> {
     let reason = match status {
         200 => "OK",
@@ -146,4 +185,58 @@ pub fn response_bytes(status: u16, body: &[u8]) -> Vec<u8> {
     .into_bytes();
     response.extend_from_slice(body);
     response
+}
+
+pub fn response_for_request(
+    request: &Request,
+    route: Route,
+    prefix: &str,
+    sequence: usize,
+    expected_token: Option<&str>,
+    ready: bool,
+) -> (u16, Vec<u8>) {
+    match request.path.as_str() {
+        "/healthz" => (200, br#"{"status":"ok"}"#.to_vec()),
+        "/readyz" => (
+            if ready { 200 } else { 503 },
+            format!(r#"{{"ready":{ready}}}"#).into_bytes(),
+        ),
+        "/v1/process" => {
+            if !ready {
+                return (503, br#"{"error":"server is draining"}"#.to_vec());
+            }
+            let bearer = request.bearer_token();
+            let body = String::from_utf8_lossy(&request.body);
+            if let Some(expected) = expected_token {
+                if bearer != Some(expected) {
+                    let error = output::error(
+                        &format!("{}-{}", prefix, sequence),
+                        route.as_str(),
+                        "AUTHENTICATION_FAILED",
+                        "authentication failed",
+                    );
+                    return (401, error.into_bytes());
+                }
+            }
+            if let Err(error) = crate::protocol::parse_line(&body) {
+                let error = output::error(
+                    &format!("{}-{}", prefix, sequence),
+                    route.as_str(),
+                    error.code,
+                    &error.message,
+                );
+                return (400, error.into_bytes());
+            }
+            let response = process_line_with_bearer(
+                route,
+                prefix,
+                sequence,
+                &body,
+                bearer,
+                expected_token,
+            );
+            (200, response.into_bytes())
+        }
+        _ => (404, br#"{"error":"not found"}"#.to_vec()),
+    }
 }
