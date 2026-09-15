@@ -37,7 +37,7 @@ def test_guide_documents_manual_wsl2_preparation_and_diagnostics():
         "wsl --install -d",
         "VERSION 2",
         "Docker Desktop",
-        "WSL integration",
+        "integración WSL",
         "docker-desktop-data",
         "daemon",
         "permisos Docker",
