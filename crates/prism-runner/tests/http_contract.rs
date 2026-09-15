@@ -1,4 +1,6 @@
-use prism_runner::http::{parse_request, response_bytes, HttpError, Request};
+use std::io::Cursor;
+
+use prism_runner::http::{parse_request, read_request, response_bytes, HttpError, Request};
 
 #[test]
 fn parses_process_request_with_bounded_headers_and_body() {
@@ -75,4 +77,12 @@ fn http_error_messages_are_not_credentials() {
     let error = HttpError::Unauthorized;
     assert_eq!(error.status(), 401);
     assert!(!format!("{error:?}").contains("token"));
+}
+
+#[test]
+fn reads_exactly_one_bounded_request_from_a_stream() {
+    let raw = b"GET /healthz HTTP/1.1\r\nContent-Length: 0\r\n\r\n";
+    let request = read_request(&mut Cursor::new(raw)).unwrap();
+    assert_eq!(request.path, "/healthz");
+    assert!(request.body.is_empty());
 }
