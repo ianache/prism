@@ -6,6 +6,7 @@ import pytest
 
 ROOT = Path(__file__).parents[1]
 LAUNCHER = ROOT / "scripts" / "run_production_gate.ps1"
+GUIDE = ROOT / "docs" / "guia-servidor-supervisor-cliente-tls.md"
 
 
 def launcher_text() -> str:
@@ -77,3 +78,19 @@ def test_launcher_excludes_internal_docker_wsl_distributions():
     assert "docker-desktop-data" in text.lower()
     assert "replace" in text.lower()
     assert "no Linux distribution is installed" in text
+
+
+def test_guide_documents_local_runner_operations():
+    text = GUIDE.read_text(encoding="utf-8")
+    for marker in (
+        "run_production_gate.ps1",
+        "-Frames 3",
+        "-Protocol tcp",
+        "-Protocol http",
+        "-EvidenceDir",
+        "100000",
+        "wsl --status",
+        "docker compose version",
+        "NO EJECUTADA",
+    ):
+        assert marker in text

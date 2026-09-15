@@ -293,4 +293,51 @@ La evidencia es válida solo si contiene `synthetic_cycle=false`,
 
 ## Alcance actual
 
+## Runner Linux local S22
+
+S22 permite ejecutar el mismo gate de producción desde PowerShell usando una
+distribución Linux existente en WSL. El launcher no instala WSL2 ni Docker;
+primero comprueba los prerrequisitos:
+
+```powershell
+rtk proxy wsl.exe --status
+rtk proxy wsl.exe -l -v
+rtk proxy docker.exe version
+rtk proxy docker.exe compose version
+```
+
+Smoke TCP:
+
+```powershell
+rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_production_gate.ps1 `
+  -Frames 3 -BatchSize 1 -Protocol tcp -EvidenceDir .\artifacts\s22-tcp-smoke
+```
+
+Smoke HTTP:
+
+```powershell
+rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_production_gate.ps1 `
+  -Frames 3 -BatchSize 1 -Protocol http -EvidenceDir .\artifacts\s22-http-smoke
+```
+
+Gate comparable TCP:
+
+```powershell
+rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_production_gate.ps1 `
+  -Frames 100000 -BatchSize 64 -Protocol tcp -EvidenceDir .\artifacts\s22-tcp-100k
+```
+
+El resultado `NO EJECUTADA` significa que falta un prerrequisito local, por
+ejemplo una distribución Linux de usuario. `FAIL` significa que el entorno fue
+detectado pero el gate devolvió un error. GitHub Actions sigue siendo la puerta
+Linux validada cuando el runner local no está disponible.
+
+Para limpiar una ejecución local, detén primero el stack y elimina solamente el
+directorio de evidencia creado para esa corrida:
+
+```powershell
+rtk proxy docker.exe compose down --remove-orphans
+rtk proxy powershell -NoProfile -Command "Remove-Item -LiteralPath '.\artifacts\s22-tcp-smoke' -Recurse -Force"
+```
+
 Este flujo cubre TLS de servidor, autenticación por token, JSONL B2, capacidad, lifecycle y supervisión local. Todavía no incluye mTLS, rotación automática de certificados, broker, persistencia, servicio Windows, despliegue remoto ni Kubernetes.
