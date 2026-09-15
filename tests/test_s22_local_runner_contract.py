@@ -89,8 +89,8 @@ def test_guide_documents_local_runner_operations():
         "-Protocol http",
         "-EvidenceDir",
         "100000",
-        "wsl --status",
-        "docker compose version",
+        "wsl.exe --status",
+        "docker.exe compose version",
         "NO EJECUTADA",
     ):
         assert marker in text
