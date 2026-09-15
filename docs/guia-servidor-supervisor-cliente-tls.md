@@ -291,6 +291,27 @@ ejecuta smoke, 100K, lifecycle y reconexión, y elimina los recursos al salir.
 La evidencia es válida solo si contiene `synthetic_cycle=false`,
 `frames_ok=100000`, digest y logs sanitizados.
 
+## Bundle de evidencia S24
+
+CI y WSL2 pueden generar un bundle común con el validador S24. Desde la raíz
+del repositorio:
+
+```powershell
+rtk proxy python scripts/build_evidence_bundle.py `
+  --input-dir .\artifacts\s20 `
+  --output .\artifacts\s24\evidence-bundle.json `
+  --source ci `
+  --commit (rtk proxy git rev-parse HEAD) `
+  --digest unknown
+rtk proxy python scripts/audit_evidence_bundle.py .\artifacts\s24\evidence-bundle.json
+```
+
+El auditor exige cuatro casos en orden, distingue `PASS`, `FAIL` y
+`NO EJECUTADA`, y solo acepta el gate TCP comparable con exactamente
+`100000/100000`. No se deben copiar payloads, PEM, tokens o credenciales al
+bundle. El artifact CI se llama `s24-evidence-bundle`; el equivalente WSL2 se
+guarda como `evidence-bundle.json` bajo el directorio de evidencia indicado.
+
 ## Alcance actual
 
 ## Runner Linux local S22

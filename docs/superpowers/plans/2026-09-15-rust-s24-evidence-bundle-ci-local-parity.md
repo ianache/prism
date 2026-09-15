@@ -115,3 +115,24 @@
 S24 se completa cuando CI y WSL2 pueden producir el mismo bundle, el validador
 rechaza evidencia incompleta o sensible, TCP `100000/100000` conserva su papel
 de decisión, `NO EJECUTADA` sigue siendo explícito y todas las suites pasan.
+
+## Cierre de ejecución
+
+- [x] Tarea 1: contrato y validador.
+- [x] Tarea 2: generador y bundle WSL2.
+- [x] Tarea 3: integración CI y paridad.
+- [x] Tarea 4: fixtures y auditoría.
+- [x] Tarea 5: verificación y cierre auditable.
+
+Resultado observado: Python `130 passed, 21 subtests passed`, Cargo release
+PASS y validaciones Compose/PowerShell/seguridad PASS. La ejecución del
+workflow CI queda pendiente de confirmación remota; el host WSL2 sigue sin
+distro Linux de usuario y por tanto conserva estado `NO EJECUTADA`.
+
+## Cierre de ejecución
+
+- [x] Tarea 1: contrato y validador.
+- [x] Tarea 2: generador y bundle WSL2.
+- [x] Tarea 3: integración CI y paridad.
+- [x] Tarea 4: fixtures y auditoría.
+- [x] Tarea 5: verificación y cierre auditable.

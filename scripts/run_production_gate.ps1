@@ -83,5 +83,15 @@ $command = "export PRISM_PROTOCOL=$protocolArg PRISM_ALLOW_CYCLE=false; bash $sc
 Write-Output "S22_LOCAL_GATE: distribution=$LinuxDistribution protocol=$Protocol frames=$Frames evidence=$EvidenceDir"
 & wsl.exe --distribution $LinuxDistribution -- bash -lc $command
 $exitCode = $LASTEXITCODE
+if ($exitCode -eq 0) {
+    $commit = (& git rev-parse HEAD).Trim()
+    $commitArg = ConvertTo-BashLiteral $commit
+    $bundleOutput = ConvertTo-BashLiteral (Join-Path $evidenceLinux 'evidence-bundle.json')
+    $bundleCommand = "cd $(ConvertTo-BashLiteral $rootLinux); python3 scripts/build_evidence_bundle.py --input-dir $evidenceArg --output $bundleOutput --source wsl2 --commit $commitArg --digest unknown"
+    & wsl.exe --distribution $LinuxDistribution -- bash -lc $bundleCommand
+    if ($LASTEXITCODE -ne 0) {
+        Write-Failure 'could not build validated evidence bundle'
+    }
+}
 Write-Output "S22_LOCAL_GATE: exit_code=$exitCode evidence=$EvidenceDir"
 exit $exitCode

@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {"frames_ok": 3, "frames_sent": 3, "name": "tcp smoke", "protocol": "tcp", "status": "PASS", "synthetic_cycle": false},
+    {"frames_ok": 3, "frames_sent": 3, "name": "http smoke", "protocol": "http", "status": "PASS", "synthetic_cycle": false},
+    {"frames_ok": 100000, "frames_sent": 100000, "name": "tcp 100000", "protocol": "tcp", "status": "PASS"},
+    {"frames_ok": 100000, "frames_sent": 100000, "name": "http 100000", "protocol": "http", "status": "PASS"}
+  ],
+  "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "schema_version": "s24.v1",
+  "source": "ci"
+}

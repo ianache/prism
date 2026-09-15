@@ -50,6 +50,15 @@ jobs:
         env:
           PRISM_PROTOCOL: http
         run: bash scripts/docker_production_readiness.sh --frames 3 --batch-size 1 --evidence-dir ./artifacts/s21-http
+      - name: Build validated S24 evidence bundle
+        if: always()
+        run: python scripts/build_evidence_bundle.py --input-dir ./artifacts/s20 --output ./artifacts/s24/evidence-bundle.json --source ci --commit "$GITHUB_SHA" --digest unknown
+      - name: Upload S24 evidence bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: s24-evidence-bundle
+          path: artifacts/s24/evidence-bundle.json
       - name: Upload sanitized evidence
         if: always()
         uses: actions/upload-artifact@v4
