@@ -71,11 +71,11 @@
 - Create: `docs/evidence/rust-s25-ci-evidence-gate-enforcement-2026-09-15.md`
 - Modify: `docs/consumo.md`
 
-- [ ] Ejecutar el workflow en GitHub Actions mediante push/dispatch autorizado.
-- [ ] Registrar run, jobs, artifact, TCP `100000/100000`, smoke, lifecycle y sanitización.
-- [ ] Si CI falla, conservar diagnóstico y no declarar S25 completado.
-- [ ] Auditar el artifact descargado sin exponer secretos.
-- [ ] Commit: `test: capture S25 CI evidence gate run`.
+- [x] Ejecutar el workflow en GitHub Actions mediante push/dispatch autorizado.
+- [x] Registrar run, jobs, artifact, TCP `100000/100000`, smoke, lifecycle y sanitización.
+- [x] Si CI falla, conservar diagnóstico y no declarar S25 completado.
+- [x] Auditar el artifact descargado sin exponer secretos.
+- [x] Commit: `test: capture S25 CI evidence gate run`.
 
 ### Task 5: Verificación completa y cierre
 
@@ -84,13 +84,13 @@
 - Modify: `docs/consumo.md`
 - Modify: `docs/superpowers/plans/2026-09-15-rust-s25-ci-evidence-gate-enforcement.md`
 
-- [ ] Ejecutar `rtk proxy python -m pytest -q`.
-- [ ] Ejecutar `rtk proxy 'C:\Users\ilver\.cargo\bin\cargo.exe' test --workspace --release`.
-- [ ] Ejecutar ambos `docker compose config`, parseo PowerShell y `git diff --check`.
-- [ ] Confirmar ausencia de secretos y preservación exacta de `100000`.
-- [ ] Actualizar consumo con una fila por tarea y una fila del plan.
-- [ ] Marcar el plan completado solo con run CI verde y artifact auditado.
-- [ ] Commit: `docs: finalize S25 CI evidence gate enforcement`.
+- [x] Ejecutar `rtk proxy python -m pytest -q`.
+- [x] Ejecutar `rtk proxy 'C:\Users\ilver\.cargo\bin\cargo.exe' test --workspace --release`.
+- [x] Ejecutar ambos `docker compose config`, parseo PowerShell y `git diff --check`.
+- [x] Confirmar ausencia de secretos y preservación exacta de `100000`.
+- [x] Actualizar consumo con una fila por tarea y una fila del plan.
+- [x] Marcar el plan completado solo con run CI verde y artifact auditado.
+- [x] Commit: `docs: finalize S25 CI evidence gate enforcement`.
 
 ## Completion Gate
 
