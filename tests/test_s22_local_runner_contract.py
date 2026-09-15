@@ -1,0 +1,96 @@
+from pathlib import Path
+import subprocess
+
+import pytest
+
+
+ROOT = Path(__file__).parents[1]
+LAUNCHER = ROOT / "scripts" / "run_production_gate.ps1"
+GUIDE = ROOT / "docs" / "guia-servidor-supervisor-cliente-tls.md"
+
+
+def launcher_text() -> str:
+    if not LAUNCHER.exists():
+        pytest.fail("scripts/run_production_gate.ps1 is not implemented")
+    return LAUNCHER.read_text(encoding="utf-8")
+
+
+def test_launcher_declares_safe_defaults_and_protocol_set():
+    text = launcher_text()
+    assert "Frames" in text
+    assert "100000" in text
+    assert "BatchSize" in text
+    assert "64" in text
+    assert "ValidateSet('tcp', 'http')" in text or 'ValidateSet("tcp", "http")' in text
+    assert "PRISM_ALLOW_CYCLE" in text
+    assert "false" in text.lower()
+    assert "docker_production_readiness.sh" in text
+
+
+def test_launcher_rejects_invalid_numeric_values_and_secret_arguments():
+    text = launcher_text()
+    assert "Frames must be positive" in text
+    assert "BatchSize must be positive" in text
+    assert "token" in text.lower()
+    assert "private key" in text.lower() or "pem" in text.lower()
+
+
+def test_launcher_reports_missing_prerequisites_deterministically():
+    text = launcher_text()
+    assert "wsl.exe" in text.lower()
+    assert "docker.exe" in text.lower()
+    assert "bash" in text.lower()
+    assert "distribution" in text.lower()
+    assert "Write-Failure" in text
+
+
+def test_launcher_uses_strict_mode_and_safe_wsl_invocation():
+    text = launcher_text()
+    assert "Set-StrictMode -Version Latest" in text
+    assert "wslpath" in text
+    assert "--distribution" in text
+    assert "bash -lc" in text
+    assert "--frames $Frames" in text
+    assert "--batch-size $BatchSize" in text
+    assert "--evidence-dir $evidenceArg" in text
+    assert "PRISM_PROTOCOL" in text
+    assert "Invoke-Expression" not in text
+
+
+def test_launcher_is_valid_powershell_syntax():
+    result = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            f"[scriptblock]::Create((Get-Content -Raw -LiteralPath '{LAUNCHER}')) | Out-Null",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_launcher_excludes_internal_docker_wsl_distributions():
+    text = launcher_text()
+    assert "docker-desktop" in text.lower()
+    assert "docker-desktop-data" in text.lower()
+    assert "replace" in text.lower()
+    assert "no Linux distribution is installed" in text
+
+
+def test_guide_documents_local_runner_operations():
+    text = GUIDE.read_text(encoding="utf-8")
+    for marker in (
+        "run_production_gate.ps1",
+        "-Frames 3",
+        "-Protocol tcp",
+        "-Protocol http",
+        "-EvidenceDir",
+        "100000",
+        "wsl.exe --status",
+        "docker.exe compose version",
+        "NO EJECUTADA",
+    ):
+        assert marker in text
