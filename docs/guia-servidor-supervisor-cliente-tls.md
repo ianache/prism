@@ -306,6 +306,14 @@ rtk proxy docker.exe version
 rtk proxy docker.exe compose version
 ```
 
+Dentro de la distribución Linux operativa, valida también:
+
+```bash
+docker version
+docker compose version
+bash --version
+```
+
 Smoke TCP:
 
 ```powershell
