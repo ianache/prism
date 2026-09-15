@@ -30,7 +30,7 @@ cleanup() {
 trap cleanup EXIT
 
 openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
-  -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost" \
+  -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,DNS:server" \
   -keyout "$secret_dir/server-key.pem" -out "$secret_dir/server-cert.pem" >/dev/null 2>&1
 printf 's18-ephemeral-token\n' > "$secret_dir/auth-token.txt"
 chmod 600 "$secret_dir"/*

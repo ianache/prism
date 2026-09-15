@@ -29,3 +29,8 @@ def test_healthcheck_and_client_have_explicit_http_modes():
     assert "/v1/process" in client
     assert "PRISM_PROTOCOL" in telemetry_client
     assert "urllib.request" in telemetry_client
+
+
+def test_production_certificate_covers_compose_http_hostname():
+    readiness = (ROOT / "scripts" / "docker_production_readiness.sh").read_text(encoding="utf-8")
+    assert "subjectAltName=DNS:localhost,DNS:server" in readiness
