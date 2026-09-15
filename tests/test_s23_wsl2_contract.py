@@ -29,3 +29,19 @@ def test_launcher_handles_internal_and_user_distributions():
     assert "docker-desktop-data" in text
     assert "no linux distribution is installed" in text
     assert "linuxdistribution" in text
+
+
+def test_guide_documents_manual_wsl2_preparation_and_diagnostics():
+    text = GUIDE.read_text(encoding="utf-8")
+    for marker in (
+        "wsl --install -d",
+        "VERSION 2",
+        "Docker Desktop",
+        "WSL integration",
+        "docker-desktop-data",
+        "daemon",
+        "permisos Docker",
+        "NO EJECUTADA",
+        "-Frames 100000",
+    ):
+        assert marker.lower() in text.lower()
