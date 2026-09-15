@@ -14,21 +14,22 @@ def _case_path(input_dir: Path, name: str) -> Path:
     return input_dir / (name.replace(" ", "-") + ".json")
 
 
-def build_bundle(input_dir: Path, output: Path, source: str, commit: str, digest: str) -> dict:
+def build_bundle(input_dir: Path, output: Path, source: str, commit: str, digest: str, http_input_dir: Path | None = None) -> dict:
     cases = []
     for name in CASE_NAMES:
-        path = _case_path(input_dir, name)
-        if not path.exists() and name == "tcp 100000" and (input_dir / "result.json").exists():
-            path = input_dir / "result.json"
-        if not path.exists() and name == "tcp smoke" and (input_dir / "smoke.json").exists():
-            path = input_dir / "smoke.json"
+        case_dir = http_input_dir if name.startswith("http ") and http_input_dir is not None else input_dir
+        path = _case_path(case_dir, name)
+        if not path.exists() and name == "tcp 100000" and (case_dir / "result.json").exists():
+            path = case_dir / "result.json"
+        if not path.exists() and name in ("tcp smoke", "http smoke") and (case_dir / "smoke.json").exists():
+            path = case_dir / "smoke.json"
         if path.exists():
             value = json.loads(path.read_text(encoding="utf-8"))
             if not isinstance(value, dict):
                 raise ValueError(f"case must be an object: {path.name}")
             case = {key: value[key] for key in value if key not in {"payload", "payload_hex", "token", "credentials"}}
             case.setdefault("name", name)
-            case.setdefault("protocol", "tcp")
+            case.setdefault("protocol", name.split()[0])
             case.setdefault("status", "PASS" if case.get("frames_sent") == case.get("frames_ok") else "FAIL")
             if name == "tcp 100000" and case.get("frames_sent") != 100000:
                 case["status"] = "FAIL"
@@ -59,12 +60,13 @@ def build_bundle(input_dir: Path, output: Path, source: str, commit: str, digest
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-dir", type=Path, required=True)
+    parser.add_argument("--http-input-dir", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source", choices=("ci", "wsl2"), required=True)
     parser.add_argument("--commit", required=True)
     parser.add_argument("--digest", required=True)
     args = parser.parse_args()
-    build_bundle(args.input_dir, args.output, args.source, args.commit, args.digest)
+    build_bundle(args.input_dir, args.output, args.source, args.commit, args.digest, args.http_input_dir)
     return 0
 
 

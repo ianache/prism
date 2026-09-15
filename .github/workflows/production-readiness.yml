@@ -50,9 +50,9 @@ jobs:
         env:
           PRISM_PROTOCOL: http
         run: bash scripts/docker_production_readiness.sh --frames 3 --batch-size 1 --evidence-dir ./artifacts/s21-http
-      - name: Build validated S24 evidence bundle
+      - name: Build validated S24 evidence bundle (s24-evidence-bundle compatibility)
         if: always()
-        run: python scripts/build_evidence_bundle.py --input-dir ./artifacts/s20 --output ./artifacts/s24/evidence-bundle.json --source ci --commit "$GITHUB_SHA" --digest unknown
+        run: python scripts/build_evidence_bundle.py --input-dir ./artifacts/s20 --http-input-dir ./artifacts/s21-http --output ./artifacts/s24/evidence-bundle.json --source ci --commit "$GITHUB_SHA" --digest unknown
       - name: Audit S24 evidence bundle
         if: always()
         run: python scripts/audit_evidence_bundle.py ./artifacts/s24/evidence-bundle.json
