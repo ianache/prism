@@ -55,6 +55,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: s20-linux-production-gate
-          path: |
-            artifacts/s20/
-            artifacts/s21-http/
+          path: artifacts/s20/
+      - name: Upload S21 HTTP evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: s21-http-production-smoke
+          path: artifacts/s21-http/
