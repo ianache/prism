@@ -3,6 +3,8 @@
 Fecha: 2026-09-15  
 Rama: `work/s22-local-linux-production-gate`
 
+Commit de cierre: el commit final de esta evidencia en la rama S22.
+
 ## Matriz local
 
 | Caso | Estado | Observación |
@@ -31,3 +33,12 @@ estado se registra como `FAIL` junto con su código de salida y evidencia.
 - `PRISM_ALLOW_CYCLE=false` y `PRISM_CONTAINER_USER=10001:10001` permanecen
   en el flujo existente.
 - No se incluyen PEM, tokens ni secretos efímeros en esta evidencia.
+
+## Verificación del incremento
+
+- Suite Python: `110 passed, 21 subtests passed`.
+- Suite Cargo workspace release: PASS.
+- Contratos del launcher: `7 passed`.
+- Contratos de matriz: `3 passed`.
+- `docker compose config` base y overlay de producción: PASS.
+- Parseo PowerShell del launcher y `git diff --check`: PASS.
