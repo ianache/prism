@@ -3,11 +3,26 @@ import os
 import socket
 import ssl
 import sys
+import urllib.request
+
+
+def http_check(host: str, port: int, cafile: str) -> int:
+    context = ssl.create_default_context(cafile=cafile)
+    for path in ("/healthz", "/readyz"):
+        with urllib.request.urlopen(f"https://{host}:{port}{path}", context=context, timeout=3) as response:
+            payload = json.loads(response.read())
+        if path == "/healthz" and payload.get("status") != "ok":
+            return 1
+        if path == "/readyz" and payload.get("ready") is not True:
+            return 1
+    return 0
 
 
 def main() -> int:
     host, port_text = os.environ.get("PRISM_HEALTH_ADDRESS", "127.0.0.1:9000").rsplit(":", 1)
     cafile = os.environ.get("PRISM_TLS_CERT_FILE", "/run/secrets/server-cert.pem")
+    if os.environ.get("PRISM_PROTOCOL", "tcp") == "http":
+        return http_check(host, int(port_text), cafile)
     token_file = os.environ.get("PRISM_AUTH_TOKEN_FILE", "/run/secrets/auth-token.txt")
     with open(token_file, encoding="utf-8") as handle:
         token = handle.read().strip()

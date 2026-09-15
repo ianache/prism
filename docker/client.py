@@ -2,6 +2,31 @@ import json
 import os
 import socket
 import ssl
+import sys
+import urllib.request
+
+
+if os.environ.get("PRISM_PROTOCOL", "tcp") == "http":
+    host = os.environ.get("PRISM_SERVER_HOST", "server")
+    port = int(os.environ.get("PRISM_SERVER_PORT", "9000"))
+    cafile = os.environ.get("PRISM_TLS_CERT_FILE", "/run/secrets/server-cert.pem")
+    token_file = os.environ.get("PRISM_AUTH_TOKEN_FILE", "/run/secrets/auth-token.txt")
+    with open(token_file, encoding="utf-8") as handle:
+        token = handle.read().strip()
+    body = json.dumps({"request_id": "compose-client", "payload_hex": "00"}).encode("utf-8")
+    request = urllib.request.Request(
+        f"https://{host}:{port}/v1/process",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    context = ssl.create_default_context(cafile=cafile)
+    with urllib.request.urlopen(request, context=context, timeout=5) as response:
+        print(response.read().decode("utf-8"))
+    raise SystemExit(0)
 
 
 host = os.environ.get("PRISM_SERVER_HOST", "server")

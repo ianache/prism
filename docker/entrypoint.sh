@@ -15,6 +15,7 @@ trap on_term TERM INT
 
 /usr/local/bin/prism-run \
     --route "${PRISM_ROUTE:-b2}" \
+    --protocol "${PRISM_PROTOCOL:-tcp}" \
     --listen "${PRISM_BIND:-0.0.0.0:9000}" \
     --workers "${PRISM_WORKERS:-2}" \
     --connection-queue "${PRISM_CONNECTION_QUEUE:-2}" \
