@@ -30,7 +30,7 @@ cleanup() {
 trap cleanup EXIT
 
 openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
-  -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost" \
+  -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,DNS:server" \
   -keyout "$secret_dir/server-key.pem" -out "$secret_dir/server-cert.pem" >/dev/null 2>&1
 printf 's18-ephemeral-token\n' > "$secret_dir/auth-token.txt"
 chmod 600 "$secret_dir"/*
@@ -42,6 +42,7 @@ python3 "$root/scripts/generate_telemetry_stream.py" \
   --output "$data_dir/telemetry.jsonl" --manifest "$data_dir/telemetry.json" --frames "$frames" >/dev/null
 cat > "$runtime_dir/s18.env" <<EOF
 PRISM_CONTAINER_USER=10001:10001
+PRISM_PROTOCOL=${PRISM_PROTOCOL:-tcp}
 PRISM_TLS_CERT=$secret_dir/server-cert.pem
 PRISM_TLS_KEY=$secret_dir/server-key.pem
 PRISM_AUTH_TOKEN=$secret_dir/auth-token.txt

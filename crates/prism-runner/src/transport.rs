@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 
 use rustls::{ServerConnection, StreamOwned};
 
-use crate::{output, process_line_with_auth, security::SecurityConfig, Route};
+use crate::{http, output, process_line_with_auth, security::SecurityConfig, Protocol, Route};
 
 pub const MAX_LINE_BYTES: usize = 64 * 1024;
 
@@ -155,8 +155,38 @@ pub fn capacity(workers: usize, queue: usize) -> usize {
     workers.saturating_add(queue)
 }
 
+fn handle_http_connection(
+    stream: ClientStream,
+    route: Route,
+    prefix: &str,
+    shutdown: &Arc<AtomicBool>,
+    auth_token: Option<&str>,
+) -> io::Result<()> {
+    let mut stream = stream;
+    let response = match http::read_request(&mut stream) {
+        Ok(request) => {
+            let (status, body) = http::response_for_request(
+                &request,
+                route,
+                prefix,
+                1,
+                auth_token,
+                !shutdown.load(Ordering::Acquire),
+            );
+            http::response_bytes(status, &body)
+        }
+        Err(error) => {
+            let body = format!(r#"{{"ok":false,"error":"{error}"}}"#);
+            http::response_bytes(error.status(), body.as_bytes())
+        }
+    };
+    stream.write_all(&response)?;
+    stream.flush()
+}
+
 struct Job {
     stream: ClientStream,
+    protocol: Protocol,
     permits: Arc<Mutex<usize>>,
     shutdown: Arc<AtomicBool>,
     drain_deadline: Arc<Mutex<Option<Instant>>>,
@@ -170,16 +200,27 @@ fn worker_loop(receiver: Arc<Mutex<mpsc::Receiver<Job>>>, route: Route, prefix: 
             Ok(job) => job,
             Err(_) => return,
         };
-        if let Err(error) = handle_connection(
-            job.stream,
-            route,
-            &prefix,
-            &mut 0usize,
-            &job.shutdown,
-            &job.drain_deadline,
-            job.read_timeout,
-            job.auth_token.as_deref(),
-        ) {
+        let result = if job.protocol == Protocol::Http {
+            handle_http_connection(
+                job.stream,
+                route,
+                &prefix,
+                &job.shutdown,
+                job.auth_token.as_deref(),
+            )
+        } else {
+            handle_connection(
+                job.stream,
+                route,
+                &prefix,
+                &mut 0usize,
+                &job.shutdown,
+                &job.drain_deadline,
+                job.read_timeout,
+                job.auth_token.as_deref(),
+            )
+        };
+        if let Err(error) = result {
             if !matches!(
                 error.kind(),
                 io::ErrorKind::ConnectionReset | io::ErrorKind::UnexpectedEof
@@ -191,11 +232,25 @@ fn worker_loop(receiver: Arc<Mutex<mpsc::Receiver<Job>>>, route: Route, prefix: 
     }
 }
 
-fn reject(stream: &mut ClientStream, route: Route, code: &str, message: &str) -> io::Result<()> {
-    write_line(
-        stream,
-        &output::error("connection", route.as_str(), code, message),
-    )?;
+fn reject(
+    stream: &mut ClientStream,
+    protocol: Protocol,
+    route: Route,
+    code: &str,
+    message: &str,
+) -> io::Result<()> {
+    if protocol == Protocol::Http {
+        let body = format!(
+            r#"{{"ok":false,"route":"{}","error":{{"code":"{}","message":"{}"}}}}"#,
+            route.as_str(), code, message
+        );
+        stream.write_all(&http::response_bytes(503, body.as_bytes()))?;
+    } else {
+        write_line(
+            stream,
+            &output::error("connection", route.as_str(), code, message),
+        )?;
+    }
     if let ClientStream::Tls(tls) = stream {
         tls.conn.send_close_notify();
         tls.flush()?;
@@ -205,6 +260,7 @@ fn reject(stream: &mut ClientStream, route: Route, code: &str, message: &str) ->
 
 pub fn serve(
     listener: TcpListener,
+    protocol: Protocol,
     route: Route,
     prefix: &str,
     workers: usize,
@@ -272,7 +328,13 @@ pub fn serve(
                     }
                 }
                 if draining || shutdown.load(Ordering::Acquire) {
-                    reject(&mut stream, route, "SERVER_DRAINING", "server is draining")?;
+                    reject(
+                        &mut stream,
+                        protocol,
+                        route,
+                        "SERVER_DRAINING",
+                        "server is draining",
+                    )?;
                     continue;
                 }
                 let admitted = {
@@ -287,6 +349,7 @@ pub fn serve(
                 if !admitted {
                     reject(
                         &mut stream,
+                        protocol,
                         route,
                         "CAPACITY_EXCEEDED",
                         "connection capacity is full",
@@ -295,6 +358,7 @@ pub fn serve(
                 }
                 let job = Job {
                     stream,
+                    protocol,
                     permits: Arc::clone(&permits),
                     shutdown: Arc::clone(&shutdown),
                     drain_deadline: Arc::clone(&drain_deadline),
@@ -307,6 +371,7 @@ pub fn serve(
                         *job.permits.lock().expect("capacity lock poisoned") += 1;
                         reject(
                             &mut job.stream,
+                            protocol,
                             route,
                             "CAPACITY_EXCEEDED",
                             "connection capacity is full",

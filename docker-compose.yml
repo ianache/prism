@@ -9,6 +9,7 @@ services:
     stop_grace_period: 10s
     environment:
       PRISM_BIND: ${PRISM_BIND:-0.0.0.0:9000}
+      PRISM_PROTOCOL: ${PRISM_PROTOCOL:-tcp}
       PRISM_ROUTE: ${PRISM_ROUTE:-b2}
       PRISM_WORKERS: ${PRISM_WORKERS:-2}
       PRISM_CONNECTION_QUEUE: ${PRISM_CONNECTION_QUEUE:-2}
@@ -45,6 +46,7 @@ services:
     environment:
       PRISM_SERVER_HOST: server
       PRISM_SERVER_PORT: 9000
+      PRISM_PROTOCOL: ${PRISM_PROTOCOL:-tcp}
       PRISM_TLS_CERT_FILE: /run/secrets/server-cert.pem
       PRISM_AUTH_TOKEN_FILE: /run/secrets/auth-token.txt
     secrets:
@@ -66,6 +68,7 @@ services:
     environment:
       PRISM_SERVER_HOST: server
       PRISM_SERVER_PORT: 9000
+      PRISM_PROTOCOL: ${PRISM_PROTOCOL:-tcp}
       PRISM_TLS_CERT_FILE: /run/secrets/server-cert.pem
       PRISM_AUTH_TOKEN_FILE: /run/secrets/auth-token.txt
       PRISM_INPUT_PATH: /data/frames
