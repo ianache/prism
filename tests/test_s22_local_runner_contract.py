@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 import pytest
 
@@ -53,3 +54,26 @@ def test_launcher_uses_strict_mode_and_safe_wsl_invocation():
     assert "--evidence-dir $evidenceArg" in text
     assert "PRISM_PROTOCOL" in text
     assert "Invoke-Expression" not in text
+
+
+def test_launcher_is_valid_powershell_syntax():
+    result = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            f"[scriptblock]::Create((Get-Content -Raw -LiteralPath '{LAUNCHER}')) | Out-Null",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_launcher_excludes_internal_docker_wsl_distributions():
+    text = launcher_text()
+    assert "docker-desktop" in text.lower()
+    assert "docker-desktop-data" in text.lower()
+    assert "replace" in text.lower()
+    assert "no Linux distribution is installed" in text

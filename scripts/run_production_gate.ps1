@@ -42,9 +42,16 @@ if ([string]::IsNullOrWhiteSpace($EvidenceDir)) {
 New-Item -ItemType Directory -Force -Path $EvidenceDir | Out-Null
 
 if ([string]::IsNullOrWhiteSpace($LinuxDistribution)) {
-    $LinuxDistribution = (& wsl.exe -l -q 2>$null | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 1).Trim()
+    # Exclude Docker Desktop's internal docker-desktop-data distribution too.
+    $LinuxDistribution = (& wsl.exe -l -q 2>$null |
+        ForEach-Object { ($_ -replace [char]0, '').Trim() } |
+        Where-Object {
+            -not [string]::IsNullOrWhiteSpace($_) -and
+            $_ -notmatch '^docker-desktop(?:-data)?$'
+        } |
+        Select-Object -First 1)
 }
-if ([string]::IsNullOrWhiteSpace($LinuxDistribution)) {
+if ([string]::IsNullOrWhiteSpace($LinuxDistribution) -or $LinuxDistribution -match '^docker-desktop(?:-data)?$') {
     Write-Failure 'no Linux distribution is installed; install WSL separately and retry'
 }
 
@@ -63,7 +70,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 function ConvertTo-BashLiteral([string]$Value) {
-    return "'" + $Value.Replace("'", "'\"'\"'") + "'"
+    $quote = [char]39
+    $doubleQuote = [char]34
+    $replacement = $quote + $doubleQuote + $quote + $doubleQuote + $quote
+    return $quote + $Value.Replace($quote, $replacement) + $quote
 }
 
 $scriptLinux = ConvertTo-BashLiteral (Join-Path $rootLinux 'scripts/docker_production_readiness.sh')
