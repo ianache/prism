@@ -121,7 +121,37 @@ with socket.create_connection((host, port), timeout=5) as raw:
 
 La respuesta debe ser JSON y reportar `ok: true` y `route: "b2"`. En un cliente de producción, lee JSONL por líneas y no supongas que cada llamada a `recv()` contiene exactamente una respuesta.
 
-## 4. Stack Docker Compose
+## 4. Flujo HTTP
+
+El modo HTTP se activa explícitamente con `--protocol http`. La ruta B0, B1 o
+B2 queda fijada al iniciar el servidor; el cliente solo envía el envelope de
+telemetría. TCP JSONL continúa siendo el modo predeterminado.
+
+Para una prueba HTTP plaintext:
+
+```powershell
+rtk proxy .\target\release\prism-run.exe --route b2 --protocol http --listen 127.0.0.1:9000
+curl.exe -sS http://127.0.0.1:9000/healthz
+curl.exe -sS http://127.0.0.1:9000/readyz
+$body = '{"request_id":"http-1","payload_hex":"00"}'
+curl.exe -sS -H "Content-Type: application/json" --data-raw $body http://127.0.0.1:9000/v1/process
+```
+
+Con TLS y autenticación, añade los archivos existentes y el header Bearer:
+
+```powershell
+rtk proxy .\target\release\prism-run.exe --route b2 --protocol http --listen 127.0.0.1:9000 --tls-cert .\server-cert.pem --tls-key .\server-key.pem --auth-token-file .\auth-token.txt
+$token = (Get-Content .\auth-token.txt -Raw).Trim()
+curl.exe --cacert .\server-cert.pem -sS https://127.0.0.1:9000/healthz
+curl.exe --cacert .\server-cert.pem -sS -H "Authorization: Bearer $token" -H "Content-Type: application/json" --data-raw $body https://127.0.0.1:9000/v1/process
+```
+
+`/healthz` devuelve `200` mientras el proceso está vivo y `/readyz` devuelve
+`200` solo mientras acepta trabajo. Durante `DRAINING`, los procesos de
+telemetría reciben `503`. El cuerpo HTTP máximo es 64 KiB y no se acepta
+`Transfer-Encoding: chunked`.
+
+## 5. Stack Docker Compose
 
 El stack Compose contiene el servidor TLS y un cliente de smoke test bajo el perfil `client`. Copia `.env.example` como `.env` y ajusta las rutas de los tres archivos TLS/token:
 
@@ -167,7 +197,7 @@ rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker_t
 
 No guardes `.env`, certificados ni tokens en Git. Usa rutas absolutas o rutas bajo `secrets/` controladas localmente y conserva los montajes como solo lectura.
 
-## 5. Ingestión de tramas de telemetría
+## 6. Ingestión de tramas de telemetría
 
 El perfil `telemetry` lee archivos binarios desde `PRISM_INPUT_PATH`, los envía como `payload_hex` y valida una respuesta B2 por cada trama. Para una prueba pequeña con los fixtures válidos del repositorio:
 
@@ -217,7 +247,7 @@ El overlay `docker-compose.production.yml` fija UID/GID `10001:10001` para un
 runtime Linux non-root. En Docker Desktop Windows puede usarse explícitamente
 `PRISM_CONTAINER_USER=0:0` por la adaptación local de permisos.
 
-## 6. Prueba manual TLS incluida
+## 7. Prueba manual TLS incluida
 
 Para ejecutar la comprobación operativa S12:
 

@@ -23,7 +23,7 @@ jobs:
           python-version: '3.x'
       - run: python -m pip install pytest
       - run: python scripts/ci_contract.py .
-      - run: python -m pytest tests/test_s14_compose_contract.py tests/test_s15_telemetry_contract.py tests/test_s17_stream_contract.py tests/test_s18_ci_contract.py tests/test_s18_production_preflight.py tests/test_s20_production_gate_contract.py
+      - run: python -m pytest tests/test_s14_compose_contract.py tests/test_s15_telemetry_contract.py tests/test_s17_stream_contract.py tests/test_s18_ci_contract.py tests/test_s18_production_preflight.py tests/test_s20_production_gate_contract.py tests/test_s21_http_compose_contract.py tests/test_s21_http_contract.py
 
   compose:
     runs-on: ubuntu-latest
@@ -46,9 +46,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run non-root TLS readiness gate
         run: bash scripts/docker_production_readiness.sh --frames 100000 --batch-size 64 --evidence-dir ./artifacts/s20
+      - name: Run HTTP TLS smoke
+        env:
+          PRISM_PROTOCOL: http
+        run: bash scripts/docker_production_readiness.sh --frames 3 --batch-size 1 --evidence-dir ./artifacts/s21-http
       - name: Upload sanitized evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: s20-linux-production-gate
-          path: artifacts/s20/
+          path: |
+            artifacts/s20/
+            artifacts/s21-http/

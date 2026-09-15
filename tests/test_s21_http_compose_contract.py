@@ -21,7 +21,10 @@ def test_entrypoint_passes_protocol_to_runner():
 def test_healthcheck_and_client_have_explicit_http_modes():
     healthcheck = (ROOT / "docker" / "healthcheck.py").read_text(encoding="utf-8")
     client = (ROOT / "docker" / "client.py").read_text(encoding="utf-8")
+    telemetry_client = (ROOT / "docker" / "telemetry_client.py").read_text(encoding="utf-8")
     assert "PRISM_PROTOCOL" in healthcheck
     assert "/healthz" in healthcheck
     assert "PRISM_PROTOCOL" in client
     assert "/v1/process" in client
+    assert "PRISM_PROTOCOL" in telemetry_client
+    assert "urllib.request" in telemetry_client

@@ -6,6 +6,7 @@ import socket
 import ssl
 import sys
 import time
+import urllib.request
 from pathlib import Path
 
 
@@ -37,6 +38,7 @@ def main() -> int:
     prefix = os.environ.get("PRISM_REQUEST_PREFIX", "telemetry")
     allow_cycle = os.environ.get("PRISM_ALLOW_CYCLE", "false").lower() == "true"
     batch_size = int(os.environ.get("PRISM_BATCH_SIZE", "1"))
+    protocol = os.environ.get("PRISM_PROTOCOL", "tcp")
     stream_path = os.environ.get("PRISM_INPUT_STREAM", "").strip()
     if target <= 0:
         raise ValueError("PRISM_FRAME_TARGET debe ser positivo")
@@ -62,6 +64,39 @@ def main() -> int:
     context = ssl.create_default_context(cafile=cafile)
     sent = 0
     payloads = iter_stream_payloads(Path(stream_path)) if stream_path else None
+    if protocol == "http":
+        for index in range(1, target + 1):
+            if payloads is not None:
+                try:
+                    payload = next(payloads)
+                except StopIteration as error:
+                    raise ValueError(
+                        f"stream insuficiente: {sent} registros para objetivo {target}"
+                    ) from error
+            else:
+                path = paths[(index - 1) % len(paths)]
+                payload = path.read_bytes()
+            digest.update(payload)
+            request_id = f"{prefix}-{index:06d}"
+            body = json.dumps({"request_id": request_id, "payload_hex": payload.hex()}).encode("utf-8")
+            request = urllib.request.Request(
+                f"https://{host}:{port}/v1/process",
+                data=body,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(request, context=context, timeout=10) as response:
+                result = json.loads(response.read())
+            response_id = result.get("request_id", "")
+            if (response_id != request_id and not response_id.endswith(f"-{request_id}")) or result.get("ok") is not True:
+                raise RuntimeError(f"respuesta inválida para {request_id}: {result}")
+            sent += 1
+        effective_user = str(os.getuid()) if hasattr(os, "getuid") else os.environ.get("USERNAME", "unknown")
+        print(json.dumps({"marker": "S15_TELEMETRY_OK", "frames_sent": sent, "frames_ok": sent, "dataset_sha256": digest.hexdigest(), "synthetic_cycle": allow_cycle, "effective_user": effective_user, "duration_ms": round((time.monotonic() - started) * 1000, 3)}))
+        return 0
     with socket.create_connection((host, port), timeout=10) as raw:
         with context.wrap_socket(raw, server_hostname="localhost") as tls:
             reader = tls.makefile("rb")
