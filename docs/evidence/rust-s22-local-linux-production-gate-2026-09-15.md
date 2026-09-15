@@ -42,3 +42,6 @@ estado se registra como `FAIL` junto con su código de salida y evidencia.
 - Contratos de matriz: `3 passed`.
 - `docker compose config` base y overlay de producción: PASS.
 - Parseo PowerShell del launcher y `git diff --check`: PASS.
+
+El seguimiento de habilitación local mediante WSL2 se documenta en
+`rust-s23-wsl2-local-gate-enablement-2026-09-15.md`.
