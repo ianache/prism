@@ -9,6 +9,7 @@ def test_compose_exposes_protocol_with_tcp_default():
     env = (ROOT / ".env.example").read_text(encoding="utf-8")
     assert "PRISM_PROTOCOL" in compose
     assert "PRISM_PROTOCOL:-tcp" in compose
+    assert compose.count("PRISM_PROTOCOL") >= 3
     assert "PRISM_PROTOCOL" in env
 
 
