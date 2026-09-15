@@ -6,7 +6,7 @@ pub mod protocol;
 pub mod security;
 pub mod transport;
 
-pub use cli::{parse_args, usage, Args, CliError, Route};
+pub use cli::{parse_args, usage, Args, CliError, Protocol, Route};
 
 pub fn process_line(route: Route, prefix: &str, sequence: usize, line: &str) -> String {
     process_line_with_auth(route, prefix, sequence, line, None)

@@ -23,9 +23,26 @@ impl Route {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Protocol {
+    Tcp,
+    Http,
+}
+
+impl Protocol {
+    fn parse(value: &str) -> Result<Self, CliError> {
+        match value {
+            "tcp" => Ok(Self::Tcp),
+            "http" => Ok(Self::Http),
+            _ => Err(CliError::InvalidValue("--protocol".into())),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Args {
     pub route: Route,
+    pub protocol: Protocol,
     pub request_id_prefix: String,
     pub listen: Option<String>,
     pub workers: usize,
@@ -54,6 +71,7 @@ where
 {
     let mut iter = args.into_iter().map(Into::into).skip(1);
     let mut route = None;
+    let mut protocol = Protocol::Tcp;
     let mut prefix = String::from("req");
     let mut listen = None;
     let mut workers = 1usize;
@@ -72,6 +90,13 @@ where
                         .next()
                         .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
                 )?)
+            }
+            "--protocol" => {
+                protocol = Protocol::parse(
+                    &iter
+                        .next()
+                        .ok_or_else(|| CliError::MissingValue(arg.clone()))?,
+                )?;
             }
             "--request-id-prefix" => {
                 prefix = iter
@@ -136,8 +161,13 @@ where
             _ => return Err(CliError::UnknownArgument(arg)),
         }
     }
+    let route = route.ok_or(CliError::MissingRoute)?;
+    if protocol == Protocol::Http && listen.is_none() {
+        return Err(CliError::InvalidValue("--protocol".into()));
+    }
     Ok(Args {
-        route: route.ok_or(CliError::MissingRoute)?,
+        route,
+        protocol,
         request_id_prefix: prefix,
         listen,
         workers,
@@ -171,5 +201,5 @@ fn parse_bounded_number(flag: &str, value: &str) -> Result<usize, CliError> {
 }
 
 pub fn usage() -> &'static str {
-    "usage: prism-run --route <b0|b1|b2> [--request-id-prefix <prefix>] [--listen <host:port>] [--workers <n>] [--connection-queue <n>] [--tls-cert <certificate.pem> --tls-key <private-key.pem>] [--auth-token-file <token-file>] [--shutdown-file <path>] [--drain-timeout-ms <ms>]"
+    "usage: prism-run --route <b0|b1|b2> [--protocol <tcp|http>] [--request-id-prefix <prefix>] [--listen <host:port>] [--workers <n>] [--connection-queue <n>] [--tls-cert <certificate.pem> --tls-key <private-key.pem>] [--auth-token-file <token-file>] [--shutdown-file <path>] [--drain-timeout-ms <ms>]"
 }
